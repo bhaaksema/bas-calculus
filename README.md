@@ -1,1 +1,1 @@
-# bas-calculus
+# Bounded-analytic sequent calculus
