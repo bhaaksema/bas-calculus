@@ -12,7 +12,7 @@
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "sudo apt-get update && sudo apt-get install -y build-essential curl libffi-dev libffi8ubuntu1 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5",
+	"postCreateCommand": "sudo apt-get update && sudo apt-get install -y libffi-dev libgmp-dev libncurses-dev libncurses5 libtinfo5",
 
 	// Configure tool-specific properties.
 	"customizations": {
