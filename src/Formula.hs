@@ -1,10 +1,9 @@
-module Formula (Formula (..), neg, iff, vars, formulas, fusions) where
-import Data.List (subsequences, union)
+module Formula (Formula (..), neg, iff) where
 
 -- | Propositional formula
-data Formula = T
+data Formula = Var String
              | F
-             | Var String
+             | T
              | And Formula Formula
              | Or Formula Formula
              | Imp Formula Formula
@@ -17,27 +16,6 @@ neg f = f `Imp` F
 -- | Bi-implication of two formulas
 iff :: Formula -> Formula -> Formula
 iff f g = (f `Imp` g) `And` (g `Imp` f)
-
--- | Get all unique variables of a formula
-vars :: Formula -> [Formula]
-vars (Var s)   = [Var s]
-vars (And f g) = vars f `union` vars g
-vars (Or f g)  = vars f `union` vars g
-vars (Imp f g) = vars f `union` vars g
-vars _         = []
-
--- | Get all unique subformulas of a formula
-formulas :: Formula -> [Formula]
-formulas (Var s)   = [Var s]
-formulas (And f g) = formulas f `union` formulas g `union` [And f g]
-formulas (Or f g)  = formulas f `union` formulas g `union` [Or f g]
-formulas (Imp f g) = formulas f `union` formulas g `union` [Imp f g]
-formulas f         = [f]
-
--- | Get all unique fusions of subformulas of a formula
-fusions :: Formula -> [Formula]
-fusions = map fuse . tail . subsequences . formulas
-  where fuse = foldr1 And
 
 -- | Show instance for Formula
 instance Show Formula where
@@ -55,5 +33,5 @@ instance Show Formula where
 showSF :: Formula -> String
 showSF T       = "⊤"
 showSF F       = "⊥"
-showSF (Var s) = s
+showSF (Var v) = v
 showSF f       = "(" ++ show f ++ ")"
