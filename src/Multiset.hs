@@ -5,9 +5,9 @@ import Formula (Formula (..))
 
 -- | Represents a multiset of formulas.
 data Multiset = Multiset
-  { bots :: [Formula]
+  { vars :: [String]
+  , bots :: [Formula]
   , tops :: [Formula]
-  , vars :: [String]
   , ands :: [(Formula, Formula)]
   , ors  :: [(Formula, Formula)]
   , imps :: [(Formula, Formula)]

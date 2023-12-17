@@ -3,50 +3,49 @@ module Prover (prove) where
 import Formula  (Formula (..))
 import Multiset
 
--- | handleGoal function takes a multiset of facts and a goal formula, and
---   recursively analyses the goal formula based on the available facts.
 handleGoal :: Multiset -> Formula -> Bool
 handleGoal facts goal = case goal of
-  T       -> True
-  And a b -> handleGoal facts a && handleGoal facts b
-  Imp a b -> handleGoal (add a facts) b
-  _       -> handleFacts facts goal
+  Var v   -> v `elem` vars facts || handleFacts facts goal -- Initial Sequent
+  T       -> True                                          -- Right Top
+  And a b -> handleGoal facts a && handleGoal facts b      -- Right Conjunction
+  Imp a b -> handleGoal (add a facts) b                    -- Right Implication
+  _       -> handleFacts facts goal                        -- Left Rules
 
 handleFacts :: Multiset -> Formula -> Bool
 handleFacts facts goal
-  | has bots facts = True
-  | has tops facts = handleGoal (facts {tops = []}) goal
-  | has ands facts = let
+  | has bots facts = True -- Left Bottom
+  | has tops facts = let  -- Left Top
+      facts' = facts {tops = []}
+    in handleGoal facts' goal
+  | has ands facts = let  -- Left Conjunction
       (a, b) = head $ ands facts
       facts' = facts {ands = tail $ ands facts}
     in handleGoal (add [a, b] facts') goal
-  | has ors facts = let
+  | has ors facts = let   -- Left Disjunction
       (a, b) = head $ ors facts
       facts' = facts {ors = tail $ ors facts}
-    in handleGoal (add a facts') goal && handleGoal (add b facts') goal
-  | has imps facts = let
+    in handleGoal (add a facts') goal
+    && handleGoal (add b facts') goal
+  | has imps facts = let  -- Left Implication
       (a, b) = head $ imps facts
       facts' = facts {imps = tail $ imps facts}
-    in handleImpFacts facts' a b goal
-  | otherwise = handleBranch facts goal
+    in handleLImp facts' a b goal
+  | otherwise = handleROr facts goal
 
-handleImpFacts :: Multiset -> Formula -> Formula -> Formula -> Bool
-handleImpFacts facts a b goal = case a of
-  Var v   -> v `elem` vars facts && handleGoal (add b facts) goal
+handleLImp :: Multiset -> Formula -> Formula -> Formula -> Bool
+handleLImp facts a b goal = case a of
+  Var v   -> if v `elem` vars facts then handleGoal (add b facts) goal else handleROr facts goal
   F       -> handleGoal facts goal
   T       -> handleGoal (add b facts) goal
   And c d -> handleGoal (add (Imp c (Imp d b)) facts) goal
   Or c d  -> handleGoal (add [Imp c b, Imp d b] facts) goal
-  _       -> handleBranch facts goal
+  Imp c d -> handleGoal (add (Imp c (Imp d b)) facts) goal
+          || handleROr (add (Imp a b) facts) goal
 
-handleBranch :: Multiset -> Formula -> Bool
-handleBranch _ _ = True
--- TODO
--- Initial Sequent
--- Right Disjunction
--- Left Compound Implication
+handleROr :: Multiset -> Formula -> Bool
+handleROr facts goal = case goal of
+  Or a b -> handleGoal facts a || handleGoal facts b
+  _      -> False -- No more rules to apply
 
--- | Prove function takes a list of axioms and a goal formula, and returns
---   whether the goal formula can be proven using the given axioms.
 prove :: [Formula] -> Formula -> Bool
 prove _ = handleGoal defaultMultiset
