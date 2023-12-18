@@ -19,7 +19,7 @@ common shared-props
 
 library
     import:           shared-props
-    exposed-modules:  Formula, Multiset, Prover
+    exposed-modules:  Formula, Prover
 
     -- Modules included in this library but not exported.
     -- other-modules:
