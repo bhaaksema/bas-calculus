@@ -1,11 +1,13 @@
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 module Main (main) where
 
-import Formula (Formula(..), neg)
-import Prover  (prove)
+import Data.List (singleton)
+import Formula   (Formula (..), neg)
+import Prover    (prove)
 
-tests :: [(Formula, Bool)]
-tests = [
-    (a :> a, True)
+test :: [(Formula, Bool)]
+test = map (\(f, expect) -> (f, prove f == expect))
+  [ (a :> a, True)
   , (a :> (b :> a), True)
   , ((a :> (a :> b)) :> (a :> b), True)
   , ((a :> (b :> c)) :> (b :> (a :> c)), True)
@@ -22,9 +24,9 @@ tests = [
   , ((a :> (b :> c)) :> ((a :> b) :> (a :> c)), True)
   ]
   where
-    a = Var "a"
-    b = Var "b"
-    c = Var "c"
+    a:b:c:_ = map (Var . singleton) ['a' .. 'z']
 
 main :: IO ()
-main = mapM_ (\(f, b) -> putStrLn $ (if prove f == b then "✅ " else "⛔ ") ++ show f) tests
+main = do
+  mapM_ (\(f, b) -> putStrLn $ (if b then "✅ " else "⛔ ") ++ show f) test
+  if all snd test then putStrLn "All tests passed!" else error "Some tests failed!"

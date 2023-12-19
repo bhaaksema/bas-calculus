@@ -11,27 +11,27 @@ data Formula = Var String
 
 -- | Negation of a formula
 neg :: Formula -> Formula
-neg f = f :> F
+neg a = a :> F
 
 -- | Bi-implication of two formulas
 iff :: Formula -> Formula -> Formula
-iff f g = (f :> g) :& (g :> f)
+iff a b = (a :> b) :& (a :> b)
 
 -- | Show instance for Formula
 instance Show Formula where
-  show (f :& g) = sf f ++ " ∧ " ++  sf g
-    where
-      sf x@(_ :& _) = show x
-      sf x          = showSF x
-  show (f :| g) = sf f ++ " ∨ " ++ sf g
-    where
-      sf x@(_ :| _) = show x
-      sf x          = showSF x
-  show (f :> g) = showSF f ++ " → " ++ showSF g
-  show f = showSF f
+  show ((c :& d) :& b) = show $ c :& (d :& b)
+  show (a :& b) = showSF a ++ " ∧ " ++ case b of
+    (c :& d) -> show (c :& d)
+    _        -> showSF b
+  show ((c :| d) :| b) = show $ c :| (d :| b)
+  show (a :| b) = showSF a ++ " ∨ " ++ case b of
+    (c :| d) -> show (c :| d)
+    _        -> showSF b
+  show (a :> b) = showSF a ++ " → " ++ showSF b
+  show a        = showSF a
 
 showSF :: Formula -> String
 showSF (Var v) = v
 showSF F       = "⊥"
 showSF T       = "⊤"
-showSF f       = "(" ++ show f ++ ")"
+showSF a       = "(" ++ show a ++ ")"
