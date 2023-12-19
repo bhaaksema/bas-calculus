@@ -20,10 +20,7 @@ common shared-props
 library
     import:           shared-props
     exposed-modules:  Formula, Prover
-
-    -- Modules included in this library but not exported.
-    -- other-modules:
-
+    other-modules:    Utils
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
     hs-source-dirs:   src
@@ -31,10 +28,6 @@ library
 executable basc
     import:           shared-props
     main-is:          Main.hs
-
-    -- Modules included in this executable, other than Main.
-    -- other-modules:
-
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
     build-depends:    basc
