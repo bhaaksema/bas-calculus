@@ -2,14 +2,14 @@ name: Haskell CI
 
 on: [push, pull_request]
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: haskell-actions/setup@v2
         with:
           enable-stack: true
-      - name: Build
+      - name: Stack build
         run: stack build --test --no-run-tests
-      - name: Tests
+      - name: Stack test
         run: stack test
