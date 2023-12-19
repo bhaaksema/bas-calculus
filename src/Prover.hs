@@ -16,33 +16,29 @@ right facts goal     = left facts [] goal
 
 -- | Checks invertible left rules and then other rules
 left :: [Formula] -> [Formula] -> Formula -> Bool
-left facts alt goal = case facts of
-  (v@(Var _) : fs) -> left fs (v : alt) goal
-  (F : _) -> True
-  (T : fs) -> axiom (fs ++ alt) goal
-  (a :& b : fs) -> axiom (a : b : fs ++ alt) goal
-  (a :| b : fs) -> axiom (a : fs ++ alt) goal && axiom (b : fs ++ alt) goal
-  (a :> b : fs) -> case a of
-    Var _ -> if a `elem` (facts ++ alt)
-      then axiom (b : fs ++ alt) goal
+left (f:fs) alt goal = case f of
+  v@(Var _) -> left fs (v : alt) goal
+  F -> True
+  T -> axiom (fs ++ alt) goal
+  (a :& b) -> axiom (a : b : fs ++ alt) goal
+  (a :| b) -> axiom (a : fs ++ alt) goal && axiom (b : fs ++ alt) goal
+  (a :> b) -> case a of
+    Var _ -> if a `elem` (fs ++ alt) then axiom (b : fs ++ alt) goal
       else left fs (a :> b : alt) goal -- Store fact for later
     F -> axiom (fs ++ alt) goal
     T -> axiom (b : fs ++ alt) goal
     c :& d -> axiom ((c :> (d :> b)) : fs ++ alt) goal
     c :| d -> axiom ((c :> b) : (d :> b) : fs ++ alt) goal
     _ -> left fs (a :> b : alt) goal -- Store fact for later
-  [] -> nonInv alt goal
+left [] alt goal = nonInv alt goal
 
 -- | Checks non-invertible rules
 nonInv :: [Formula] -> Formula -> Bool
-nonInv facts goal
-  = (case goal of -- Right disjunction
-    (a :| b) -> axiom facts a || axiom facts b
-    _        -> False
-  ) || any (\(f, fs) -> case f of -- Left nested implication
-    ((c :> d) :> b) -> axiom (d :> b : fs) (c :> d) && axiom (b : fs) goal
-    _               -> False -- Ignore other stored formulas
-  ) (holes facts)
+nonInv facts goal = rightOr goal || any (uncurry leftImp) (holes facts) where
+  rightOr (a :| b) = axiom facts a || axiom facts b
+  rightOr _        = False
+  leftImp ((c :> d) :> b) fs = axiom (d :> b : fs) (c :> d) && axiom (b : fs) goal
+  leftImp _ _                = False -- Skip other facts
 
 -- | Checks if a formula is provable
 prove :: Formula -> Bool
