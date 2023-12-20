@@ -5,8 +5,8 @@ import Data.List (singleton)
 import Formula   (Formula (..), neg)
 import Prover    (prove)
 
-test :: [(Formula, Bool)]
-test = map (\(f, expect) -> (f, prove f == expect))
+intTest :: [(Formula, Bool)]
+intTest = map (\(f, expect) -> (f, prove [] f == expect))
   [ (a :> a, True)
   , (a :> (b :> a), True)
   , ((a :> (a :> b)) :> (a :> b), True)
@@ -23,10 +23,19 @@ test = map (\(f, expect) -> (f, prove f == expect))
   , (neg a :| a, False)
   , ((a :> (b :> c)) :> ((a :> b) :> (a :> c)), True)
   ]
-  where
-    a:b:c:_ = map (Var . singleton) ['a' .. 'z']
+
+superTest :: [(Formula, Bool)]
+superTest = map (\(axi, f, expect) -> (f, prove axi f == expect))
+  [ ([neg (neg b)], a :| neg a, True)
+  -- , (neg (neg b), [a :| neg a], True) -- TODO: does not terminate in reasonable time
+  ]
+
+a :: Formula
+b :: Formula
+c :: Formula
+a:b:c:_ = map (Var . singleton) ['a' .. 'z']
 
 main :: IO ()
 main = do
-  mapM_ (\(f, b) -> putStrLn $ (if b then "✅ " else "⛔ ") ++ show f) test
-  if all snd test then putStrLn "All tests passed!" else error "Some tests failed!"
+  mapM_ (\(f, res) -> putStrLn $ (if res then "✅ " else "⛔ ") ++ show f) (intTest ++ superTest)
+  if all snd intTest && all snd superTest then putStrLn "All tests passed!" else error "Some tests failed!"

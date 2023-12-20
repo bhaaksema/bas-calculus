@@ -19,7 +19,7 @@ common shared-props
 
 library
     import:           shared-props
-    exposed-modules:  Formula, Prover
+    exposed-modules:  Bounding, Formula, Prover
     other-modules:    Utils
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:

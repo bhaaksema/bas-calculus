@@ -1,7 +1,7 @@
 module Bounding (set) where
 
 import Data.List  (subsequences, union)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromJust)
 import Formula    (Formula (..))
 
 -- | Axiom is kind of a formula
@@ -17,29 +17,30 @@ vars _        = []
 
 -- | Get all unique subformulas of a formula
 formulas :: Formula -> [Formula]
-formulas (Var v)  = [Var v]
-formulas (f :& g) = formulas f `union` formulas g `union` [f :& g]
-formulas (f :| g) = formulas f `union` formulas g `union` [f :| g]
-formulas (f :> g) = formulas f `union` formulas g `union` [f :> g]
+formulas (f :& g) = f :& g : formulas f `union` formulas g
+formulas (f :| g) = f :| g : formulas f `union` formulas g
+formulas (f :> g) = f :> g : formulas f `union` formulas g
 formulas f        = [f]
 
 -- | Get all unique fusions of subformulas of a formula
 fusions :: Formula -> [Formula]
 fusions = map fuse . tail . subsequences . formulas
-  where fuse = foldr1 (:&)
+  where fuse = foldl1 (:&)
 
 -- | Substitution
 type Subst = [(String, Formula)]
 
 apply :: Subst -> Formula -> Formula
-apply s (Var v)  = fromMaybe (Var v) (lookup v s)
+apply s (Var v)  = fromJust $ lookup v s
 apply s (f :& g) = apply s f :& apply s g
 apply s (f :| g) = apply s f :| apply s g
 apply s (f :> g) = apply s f :> apply s g
 apply _ f        = f
 
-fusionSubst :: Axiom -> Formula -> [Subst]
-fusionSubst a f = [[(v, f1) | f1 <- fusions f] | v <- vars a]
+subst :: Axiom -> Formula -> [Subst]
+subst a f = sequence [[(v, f1) | f1 <- fs] | v <- vs] where
+  fs = fusions f
+  vs = vars a
 
 set :: [Axiom] -> Formula -> [Formula]
-set as f = concat [map (`apply` a) (fusionSubst a f) | a <- as]
+set as f = concat [map (`apply` a) (subst a f) | a <- as]

@@ -19,14 +19,8 @@ iff a b = (a :> b) :& (a :> b)
 
 -- | Show instance for Formula
 instance Show Formula where
-  show ((c :& d) :& b) = show $ c :& (d :& b)
-  show (a :& b) = showSF a ++ " ∧ " ++ case b of
-    (c :& d) -> show (c :& d)
-    _        -> showSF b
-  show ((c :| d) :| b) = show $ c :| (d :| b)
-  show (a :| b) = showSF a ++ " ∨ " ++ case b of
-    (c :| d) -> show (c :| d)
-    _        -> showSF b
+  show (a :& b) = showSF a ++ " ∧ " ++ showSF b
+  show (a :| b) = showSF a ++ " ∨ " ++ showSF b
   show (a :> b) = showSF a ++ " → " ++ showSF b
   show a        = showSF a
 
