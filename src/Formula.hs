@@ -15,7 +15,7 @@ neg a = a :> F
 
 -- | Bi-implication of two formulas
 iff :: Formula -> Formula -> Formula
-iff a b = (a :> b) :& (a :> b)
+iff a b = (a :> b) :& (b :> a)
 
 -- | Show instance for Formula
 instance Show Formula where
