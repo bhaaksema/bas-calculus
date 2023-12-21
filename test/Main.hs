@@ -3,10 +3,10 @@ module Main (main) where
 
 import Data.List (singleton)
 import Formula   (Formula (..), neg)
-import Prover    (prove)
+import Prover    (prove0)
 
 intTest :: [(Formula, Bool)]
-intTest = map (\(f, expect) -> (f, prove [] f == expect))
+intTest = map (\(f, expect) -> (f, prove0 [] f == expect))
   [ (a :> a, True)
   , (a :> (b :> a), True) -- left-weakening axiom
   , ((a :> (a :> b)) :> (a :> b), True) -- contraction axiom
