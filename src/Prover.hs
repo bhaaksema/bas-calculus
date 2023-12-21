@@ -13,18 +13,15 @@ prove axi facts goal = any (\f -> f == goal || f == F) facts ||
 right :: [Formula] -> [Formula] -> Formula -> Bool
 right axi facts (a :& b) = prove axi facts a && prove axi facts b
 right axi facts (a :| b)
-  | a == T || b == T     = True
   | a == b               = prove axi facts a
-  | b < a                = right axi facts (b :| a)
-  | otherwise            = left axi facts [] (a :| b)
+  | b < a                = prove axi facts (b :| a)
+  | otherwise            = a == T || b == T
 right axi facts (a :> b) = prove axi (a : facts) b
 right _ _ goal           = goal == T
 
 -- | Checks invertible left rules
 left :: [Formula] -> [Formula] -> [Formula] -> Formula -> Bool
 left axi (f:fs) alt goal = case f of
-  v@(Var _) -> left axi fs (v : alt) goal
-  T         -> left axi fs alt goal
   (a :& b)  -> prove axi (a : b : fs ++ alt) goal
   (a :| b)  -> prove axi (a : fs ++ alt) goal && prove axi (b : fs ++ alt) goal
   (a :> b)  -> case a of
@@ -35,7 +32,7 @@ left axi (f:fs) alt goal = case f of
     c :& d -> prove axi ((c :> (d :> b)) : fs ++ alt) goal
     c :| d -> prove axi ((c :> b) : (d :> b) : fs ++ alt) goal
     _ -> left axi fs (a :> b : alt) goal -- Store fact for later
-  _ -> error "left: unexpected formula"
+  a -> left axi fs (if a == T then alt else a : alt) goal
 left _ [] _ _ = False
 
 -- | Checks non-invertible rules
