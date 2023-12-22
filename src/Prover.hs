@@ -1,12 +1,12 @@
 module Prover (prove) where
 
-import Bounding  (for)
+import Bounding  (set)
 import Formula   (Formula (..))
 import Utils     (holes)
 
 -- | Checks if a formula is provable
 prove :: [Formula] -> Formula -> Bool
-prove as f = initial (for as f) f
+prove as f = initial (set as f) f
 
 -- | First, check initial sequents
 initial :: [Formula] -> Formula -> Bool

@@ -10,7 +10,6 @@ author:             bhaaksema
 maintainer:         17254355+bhaaksema@users.noreply.github.com
 category:           Logic
 extra-doc-files:    README.md
--- extra-source-files:
 
 common shared-props
     ghc-options:      -Wall
@@ -19,17 +18,13 @@ common shared-props
 
 library
     import:           shared-props
-    exposed-modules:  Bounding, Formula, Prover
-    other-modules:    Utils
-    -- LANGUAGE extensions used by modules in this package.
-    -- other-extensions:
+    exposed-modules:  Formula, Prover
+    other-modules:    Bounding, Utils
     hs-source-dirs:   src
 
 executable basc
     import:           shared-props
     main-is:          Main.hs
-    -- LANGUAGE extensions used by modules in this package.
-    -- other-extensions:
     build-depends:    basc
     hs-source-dirs:   app
     default-language: Haskell2010
@@ -38,5 +33,5 @@ test-suite basc-test
     import:           shared-props
     type:             exitcode-stdio-1.0
     hs-source-dirs:   test
-    main-is:          Main.hs
+    main-is:          Spec.hs
     build-depends:    basc
