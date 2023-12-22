@@ -1,13 +1,15 @@
-{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 module Main (main) where
 
-import Data.List (singleton)
-import Formula   (Formula (..), neg)
-import Prover    (prove0)
+import Formula   (Formula (..), neg, iff)
+import Prover    (prove)
 
-intTest :: [(Formula, Bool)]
-intTest = map (\(f, expect) -> (f, prove0 [] f == expect))
+a :: Formula; b :: Formula; c :: Formula
+(a, b, c) = (Var "a", Var "b", Var "c")
+
+tests :: [([Formula], Formula, Bool)]
+tests = map (\(f, expect) -> ([], f, expect))
   [ (a :> a, True)
+  , (F, False) 
   , (a :> (b :> a), True) -- left-weakening axiom
   , ((a :> (a :> b)) :> (a :> b), True) -- contraction axiom
   , ((a :> (b :> c)) :> (b :> (a :> c)), True) -- exchange axiom
@@ -25,14 +27,17 @@ intTest = map (\(f, expect) -> (f, prove0 [] f == expect))
   , ((a :& b) :> b, True)
   -- Łukasiewicz's axioms
   , ((a :> (b :> c)) :> ((a :> b) :> (a :> c)), True)
-  , ((neg a :> neg b) :> (b :> a), False)
-  ] ++ [
-    (neg (neg (a :| neg a)), True) -- Ono exercise 1.13
+  , ((neg a :> neg b) `iff` (b :> a), False)
+  , (neg (neg (a :| neg a)), True) -- Ono exercise 1.13
   , ((neg a:| neg b) :> neg (a :& b), True) -- Ono example 1.8
-  ] where
-  a:b:c:_ = map (Var . singleton) ['a' .. 'z']
+  ] ++
+  [ ([a :| neg a], neg (neg b) :> b, True)
+  , ([neg (neg b) :> b], a :| neg a, True)
+  , ([a :| neg a], F, False)
+  ]
 
 main :: IO ()
 main = do
-  mapM_ (\(f, res) -> putStrLn $ (if res then "✅ " else "⛔ ") ++ show f) intTest
-  if all snd intTest then putStrLn "All tests passed!" else error "Some tests failed!"
+  let result = map (\(axi, f, expect) -> (f, prove axi f == expect)) tests
+  mapM_ (\(f, res) -> putStrLn $ (if res then "✅ " else "⛔ ") ++ show f) result
+  if all snd result then putStrLn "All tests passed!" else error "Some tests failed!"

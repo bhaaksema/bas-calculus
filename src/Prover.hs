@@ -1,50 +1,49 @@
-module Prover (prove0) where
+module Prover (prove) where
 
-import Bounding (set)
-import Formula  (Formula (..))
-import Utils    (holes)
-
--- | Checks axioms and other rules
-prove :: [Formula] -> [Formula] -> Formula -> Bool
-prove axi facts goal = any (\f -> f == goal || f == F) facts ||
-  right axi facts goal || left axi facts [] goal || nonInv axi facts goal
-
--- | Checks invertible right rules
-right :: [Formula] -> [Formula] -> Formula -> Bool
-right axi facts (a :& b) = prove axi facts a && prove axi facts b
-right axi facts (a :| b)
-  | a == b               = prove axi facts a
-  | b < a                = prove axi facts (b :| a)
-  | otherwise            = a == T || b == T
-right axi facts (a :> b) = prove axi (a : facts) b
-right _ _ goal           = goal == T
-
--- | Checks invertible left rules
-left :: [Formula] -> [Formula] -> [Formula] -> Formula -> Bool
-left axi (f:fs) alt goal = case f of
-  (a :& b)  -> prove axi (a : b : fs ++ alt) goal
-  (a :| b)  -> prove axi (a : fs ++ alt) goal && prove axi (b : fs ++ alt) goal
-  (a :> b)  -> case a of
-    Var _ -> if a `elem` (fs ++ alt) then prove axi (b : fs ++ alt) goal
-      else left axi fs (a :> b : alt) goal -- Store fact for later
-    F -> prove axi (fs ++ alt) goal
-    T -> prove axi (b : fs ++ alt) goal
-    c :& d -> prove axi ((c :> (d :> b)) : fs ++ alt) goal
-    c :| d -> prove axi ((c :> b) : (d :> b) : fs ++ alt) goal
-    _ -> left axi fs (a :> b : alt) goal -- Store fact for later
-  a -> left axi fs (if a == T then alt else a : alt) goal
-left _ [] _ _ = False
-
--- | Checks non-invertible rules
-nonInv :: [Formula] -> [Formula] -> Formula -> Bool
-nonInv axi facts goal = rightOr goal || any (uncurry leftImp) (holes facts) || cut axi where
-  rightOr (a :| b) = prove axi facts a || prove axi facts b
-  rightOr _        = False
-  leftImp ((c :> d) :> b) fs = prove axi (d :> b : fs) (c :> d) && prove axi (b : fs) goal
-  leftImp _ _                = False -- Skip other facts
-  cut []       = False
-  cut (a : as) = prove as (a : facts) goal
+import Bounding  (for)
+import Formula   (Formula (..))
+import Utils     (holes)
 
 -- | Checks if a formula is provable
-prove0 :: [Formula] -> Formula -> Bool
-prove0 as f = prove (set as f) [] f
+prove :: [Formula] -> Formula -> Bool
+prove as f = initial (for as f) f
+
+-- | First, check initial sequents
+initial :: [Formula] -> Formula -> Bool
+initial facts e = let fs = filter (/= T) facts in
+  e == T || any (\f -> f == e || f == F) fs || unary fs e
+
+-- | Then, check invertible rules with one premise
+unary :: [Formula] -> Formula -> Bool
+unary facts (a :> b) = initial (a : facts) b
+unary facts (a :| b)
+  | a == b    = initial facts a
+  | otherwise = a == T || b == T || binary facts (a :| b)
+unary facts e = leftUnary (holes facts) where
+  leftUnary ((a :& b, fs) : _) = initial (a : b : fs) e
+  leftUnary ((a :> b, fs) : next) = case a of
+    Var _  -> if a `elem` fs then initial (b : fs) e else leftUnary next
+    F      -> initial fs e
+    T      -> initial (b : fs) e
+    c :& d -> initial ((c :> (d :> b)) : fs) e
+    c :| d -> initial ((c :> b) : (d :> b) : fs) e
+    _      -> leftUnary next
+  leftUnary (_ : next) = leftUnary next
+  leftUnary [] = binary facts e
+
+-- | Next, check invertible rules with two premises
+binary :: [Formula] -> Formula -> Bool
+binary facts (a :& b)
+  | a == b    = initial facts a
+  | otherwise = initial facts a && initial facts b
+binary facts e = leftOr (holes facts) where
+  leftOr ((a :| b, fs) : _) = initial (a : fs) e && initial (b : fs) e
+  leftOr (_ : next)         = leftOr next
+  leftOr []                 = noninv facts e
+
+-- | Finally, check non-invertible rules
+noninv :: [Formula] -> Formula -> Bool
+noninv facts (a :| b) = initial facts a || initial facts b
+noninv facts e = any leftImp (holes facts) where
+  leftImp ((c :> d) :> b, fs) = initial (d :> b : fs) (c :> d) && initial (b : fs) e
+  leftImp _ = False
