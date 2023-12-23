@@ -1,24 +1,30 @@
 module Prover (prove) where
 
+import Control.Monad.Extra (anyM, (&&^), (||^))
+import Control.Monad.State (State, evalState, get, put)
+
 import Bounding  (set)
+import Data.List (intersect)
 import Formula   (Formula (..))
 import Utils     (holes)
 
+type ProofState = State ([Formula], [Formula])
+
 -- | Checks if a formula is provable
 prove :: [Formula] -> Formula -> Bool
-prove as f = initial (set as f) f
+prove as f = evalState (initial [] f) (as, set as f)
 
 -- | First, check initial sequents
-initial :: [Formula] -> Formula -> Bool
+initial :: [Formula] -> Formula -> ProofState Bool
 initial facts e = let fs = filter (/= T) facts in
-  e == T || any (\f -> f == e || f == F) fs || unary fs e
+  pure (e == T || any (\f -> f == e || f == F) fs) ||^ unary fs e
 
 -- | Then, check invertible rules with one premise
-unary :: [Formula] -> Formula -> Bool
+unary :: [Formula] -> Formula -> ProofState Bool
 unary facts (a :> b) = initial (a : facts) b
 unary facts (a :| b)
   | a == b    = initial facts a
-  | otherwise = a == T || b == T || binary facts (a :| b)
+  | otherwise = pure (a == T || b == T) ||^ binary facts (a :| b)
 unary facts e = leftUnary (holes facts) where
   leftUnary ((a :& b, fs) : _) = initial (a : b : fs) e
   leftUnary ((a :> b, fs) : next) = case a of
@@ -32,18 +38,23 @@ unary facts e = leftUnary (holes facts) where
   leftUnary [] = binary facts e
 
 -- | Next, check invertible rules with two premises
-binary :: [Formula] -> Formula -> Bool
+binary :: [Formula] -> Formula -> ProofState Bool
 binary facts (a :& b)
   | a == b    = initial facts a
-  | otherwise = initial facts a && initial facts b
+  | otherwise = initial facts a &&^ initial facts b
 binary facts e = leftOr (holes facts) where
-  leftOr ((a :| b, fs) : _) = initial (a : fs) e && initial (b : fs) e
+  leftOr ((a :| b, fs) : _) = initial (a : fs) e &&^ initial (b : fs) e
   leftOr (_ : next)         = leftOr next
   leftOr []                 = noninv facts e
 
 -- | Finally, check non-invertible rules
-noninv :: [Formula] -> Formula -> Bool
-noninv facts (a :| b) = initial facts a || initial facts b
-noninv facts e = any leftImp (holes facts) where
-  leftImp ((c :> d) :> b, fs) = initial (d :> b : fs) (c :> d) && initial (b : fs) e
-  leftImp _ = False
+noninv :: [Formula] -> Formula -> ProofState Bool
+noninv facts (a :| b) = initial facts a ||^ initial facts b
+noninv facts e = anyM leftImp (holes facts) ||^ do
+  (as, inst) <- get
+  cut as (inst `intersect` set as (foldr (:>) e facts))
+  where
+  leftImp ((c :> d) :> b, fs) = initial (d :> b : fs) (c :> d) &&^ initial (b : fs) e
+  leftImp _ = pure False
+  cut as (a : inst) = put (as, inst) >> initial (a : facts) e
+  cut _ []          = pure False
