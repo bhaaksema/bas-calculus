@@ -1,60 +1,58 @@
 module Prover (prove) where
 
-import Control.Monad.Extra (anyM, (&&^), (||^))
-import Control.Monad.State (State, evalState, get, put)
-
-import Bounding  (set)
-import Data.List (intersect)
+import Bounding  (for, set)
+import Data.List (delete, intersect)
 import Formula   (Formula (..))
-import Utils     (holes)
 
-type ProofState = State ([Formula], [Formula])
+type CutFormulas = ([Formula], [Formula])
+
+update :: CutFormulas -> [Formula] -> Formula -> CutFormulas
+update (axi, inst) facts e = (axi, inst `intersect` for axi (foldr (:>) e facts) `intersect` for axi (foldl (:&) T facts :> e))
 
 -- | Checks if a formula is provable
 prove :: [Formula] -> Formula -> Bool
-prove as f = evalState (initial [] f) (as, set as f)
+prove as f = initial (as, for as f) [] f
 
 -- | First, check initial sequents
-initial :: [Formula] -> Formula -> ProofState Bool
-initial facts e = let fs = filter (/= T) facts in
-  pure (e == T || any (\f -> f == e || f == F) fs) ||^ unary fs e
+initial :: CutFormulas -> [Formula] -> Formula -> Bool
+initial as facts e = let fs = filter (/= T) facts in
+  e == T || any (\f -> f == e || f == F) fs || unary as fs e
 
 -- | Then, check invertible rules with one premise
-unary :: [Formula] -> Formula -> ProofState Bool
-unary facts (a :> b) = initial (a : facts) b
-unary facts (a :| b)
-  | a == b    = initial facts a
-  | otherwise = pure (a == T || b == T) ||^ binary facts (a :| b)
-unary facts e = leftUnary (holes facts) where
-  leftUnary ((a :& b, fs) : _) = initial (a : b : fs) e
-  leftUnary ((a :> b, fs) : next) = case a of
-    Var _  -> if a `elem` fs then initial (b : fs) e else leftUnary next
-    F      -> initial fs e
-    T      -> initial (b : fs) e
-    c :& d -> initial ((c :> (d :> b)) : fs) e
-    c :| d -> initial ((c :> b) : (d :> b) : fs) e
-    _      -> leftUnary next
+unary :: CutFormulas -> [Formula] -> Formula -> Bool
+unary as facts (a :> b) = initial as (a : facts) b
+unary as facts e = leftUnary facts where
+  leftUnary (a :& b : _) = initial as (a : b : delete (a :& b) facts) e
+  leftUnary (a :> b : fs) = case a of
+    Var _  -> if a `elem` facts then initial as (b : delete (a :> b) facts) e else leftUnary fs
+    F      -> initial as (delete (a :> b) facts) e
+    T      -> initial as (b : delete (a :> b) facts) e
+    c :& d -> initial as ((c :> (d :> b)) : delete (a :> b) facts) e
+    c :| d -> initial as ((c :> b) : (d :> b) : delete (a :> b) facts) e
+    _      -> leftUnary fs
   leftUnary (_ : next) = leftUnary next
-  leftUnary [] = binary facts e
+  leftUnary [] = binary as facts e
 
 -- | Next, check invertible rules with two premises
-binary :: [Formula] -> Formula -> ProofState Bool
-binary facts (a :& b)
-  | a == b    = initial facts a
-  | otherwise = initial facts a &&^ initial facts b
-binary facts e = leftOr (holes facts) where
-  leftOr ((a :| b, fs) : _) = initial (a : fs) e &&^ initial (b : fs) e
-  leftOr (_ : next)         = leftOr next
-  leftOr []                 = noninv facts e
+binary :: CutFormulas -> [Formula] -> Formula -> Bool
+binary as facts (a :& b)
+  | a == b    = initial as facts a
+  | otherwise = initial as facts a && initial as facts b
+binary as facts e = leftOr facts where
+  leftOr (a :| b : _) = initial as (a : fs) e && initial as (b : fs) e
+    where fs = delete (a :| b) facts
+  leftOr (_ : fs)     = leftOr fs
+  leftOr []           = noninv as facts e
 
 -- | Finally, check non-invertible rules
-noninv :: [Formula] -> Formula -> ProofState Bool
-noninv facts (a :| b) = initial facts a ||^ initial facts b
-noninv facts e = anyM leftImp (holes facts) ||^ do
-  (as, inst) <- get
-  cut as (inst `intersect` set as (foldr (:>) e facts))
-  where
-  leftImp ((c :> d) :> b, fs) = initial (d :> b : fs) (c :> d) &&^ initial (b : fs) e
-  leftImp _ = pure False
-  cut as (a : inst) = put (as, inst) >> initial (a : facts) e
-  cut _ []          = pure False
+noninv :: CutFormulas -> [Formula] -> Formula -> Bool
+noninv as facts e = rightOr e || any leftImp facts || cut as where
+  rightOr (a :| b)
+    | a == b    = initial as facts a
+    | otherwise = initial as facts a || initial as facts b
+  rightOr _ = False
+  leftImp ((c :> d) :> b) = initial as (d :> b : fs) (c :> d) && initial as (b : fs) e
+    where fs = delete ((c :> d) :> b) facts
+  leftImp _ = False
+  cut (axi, a : inst) = initial (axi, inst) (a : facts) e
+  cut (_, [])         = False

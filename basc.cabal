@@ -13,13 +13,13 @@ extra-doc-files:    README.md
 
 common shared-props
     ghc-options:      -Wall
-    build-depends:    base ^>=4.17.2.0, mtl, extra
+    build-depends:    base ^>=4.17.2.0
     default-language: Haskell2010
 
 library
     import:           shared-props
     exposed-modules:  Formula, Prover
-    other-modules:    Bounding, Utils
+    other-modules:    Bounding
     hs-source-dirs:   src
 
 executable basc
