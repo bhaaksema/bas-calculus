@@ -11,48 +11,47 @@ update (axi, inst) facts e = (axi, inst `intersect` for axi (foldr (:>) e facts)
 
 -- | Checks if a formula is provable
 prove :: [Formula] -> Formula -> Bool
-prove as f = initial (as, for as f) [] f
+prove as f = unary (as, for as f) [] f
 
--- | First, check initial sequents
-initial :: CutFormulas -> [Formula] -> Formula -> Bool
-initial as facts e = let fs = filter (/= T) facts in
-  e == T || any (\f -> f == e || f == F) fs || unary as fs e
-
--- | Then, check invertible rules with one premise
+-- | First, check initial sequents and invertible rules with one premise
 unary :: CutFormulas -> [Formula] -> Formula -> Bool
-unary as facts (a :> b) = initial as (a : facts) b
-unary as facts e = leftUnary facts where
-  leftUnary (a :& b : _) = initial as (a : b : delete (a :& b) facts) e
+unary _ _ T = True
+unary as facts (a :> b) = unary as (a : facts) b
+unary as facts e = initial e || leftUnary facts where
+  initial (Var _) = e `elem` facts
+  initial _       = False
+  leftUnary (F : _ ) = True
+  leftUnary (a :& b : _) = unary as (a : b : delete (a :& b) facts) e
   leftUnary (a :> b : fs) = case a of
-    Var _  -> if a `elem` facts then initial as (b : delete (a :> b) facts) e else leftUnary fs
-    F      -> initial as (delete (a :> b) facts) e
-    T      -> initial as (b : delete (a :> b) facts) e
-    c :& d -> initial as ((c :> (d :> b)) : delete (a :> b) facts) e
-    c :| d -> initial as ((c :> b) : (d :> b) : delete (a :> b) facts) e
+    Var _  -> if a `elem` facts then unary as (b : delete (a :> b) facts) e else leftUnary fs
+    F      -> unary as (delete (a :> b) facts) e
+    T      -> unary as (b : delete (a :> b) facts) e
+    c :& d -> unary as ((c :> (d :> b)) : delete (a :> b) facts) e
+    c :| d -> unary as ((c :> b) : (d :> b) : delete (a :> b) facts) e
     _      -> leftUnary fs
   leftUnary (_ : next) = leftUnary next
-  leftUnary [] = binary as facts e
+  leftUnary [] = cut (update as facts e)
+  cut (axi, a : inst) = unary (axi, inst) (a : facts) e
+  cut (_, [])         = binary as facts e
 
--- | Next, check invertible rules with two premises
+-- | Then, check invertible rules with two premises
 binary :: CutFormulas -> [Formula] -> Formula -> Bool
 binary as facts (a :& b)
-  | a == b    = initial as facts a
-  | otherwise = initial as facts a && initial as facts b
+  | a == b    = unary as facts a
+  | otherwise = unary as facts a && unary as facts b
 binary as facts e = leftOr facts where
-  leftOr (a :| b : _) = initial as (a : fs) e && initial as (b : fs) e
+  leftOr (a :| b : _) = unary as (a : fs) e && unary as (b : fs) e
     where fs = delete (a :| b) facts
   leftOr (_ : fs)     = leftOr fs
   leftOr []           = noninv as facts e
 
 -- | Finally, check non-invertible rules
 noninv :: CutFormulas -> [Formula] -> Formula -> Bool
-noninv as facts e = rightOr e || any leftImp facts || cut as where
+noninv as facts e = rightOr e || any leftImp facts where
   rightOr (a :| b)
-    | a == b    = initial as facts a
-    | otherwise = initial as facts a || initial as facts b
+    | a == b    = unary as facts a
+    | otherwise = unary as facts a || unary as facts b
   rightOr _ = False
-  leftImp ((c :> d) :> b) = initial as (d :> b : fs) (c :> d) && initial as (b : fs) e
+  leftImp ((c :> d) :> b) = unary as (d :> b : fs) (c :> d) && unary as (b : fs) e
     where fs = delete ((c :> d) :> b) facts
   leftImp _ = False
-  cut (axi, a : inst) = initial (axi, inst) (a : facts) e
-  cut (_, [])         = False
