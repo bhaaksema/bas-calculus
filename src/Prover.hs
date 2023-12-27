@@ -1,17 +1,17 @@
 module Prover (prove) where
 
-import Bounding  (for, set)
+import Bounding
 import Data.List (delete, intersect)
 import Formula   (Formula (..))
 
-type CutFormulas = ([Formula], [Formula])
+type CutFormulas = (Formula -> [Formula], [Formula])
 
 update :: CutFormulas -> [Formula] -> Formula -> CutFormulas
-update (axi, inst) facts e = (axi, inst `intersect` for axi (foldr (:>) e facts) `intersect` for axi (foldl (:&) T facts :> e))
+update (bf, inst) facts e = (bf, inst `intersect` bf (foldr (:>) e facts) `intersect` bf (foldl (:&) T facts :> e))
 
 -- | Checks if a formula is provable
 prove :: [Formula] -> Formula -> Bool
-prove as f = unary (as, for as f) [] f
+prove as f = unary (for as, for as f) [] f
 
 -- | First, check initial sequents and invertible rules with one premise
 unary :: CutFormulas -> [Formula] -> Formula -> Bool
