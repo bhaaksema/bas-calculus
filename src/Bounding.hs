@@ -1,4 +1,4 @@
-module Bounding (var, for, set) where
+module Bounding (Axiom, var, for, set) where
 
 import qualified Data.Map as Map
 import qualified Data.Set as Set
