@@ -2,10 +2,7 @@ module Prover.G3cp where
 
 import Data.Bifunctor (first, second)
 import Formula        (Formula (..))
-import Prover.Utils   (Sequent, Stash, (!:), (!?))
-
--- Multi-succedent
-type M = [Formula]
+import Prover.Utils   (M, Sequent, Stash, (!?), (<:), (>:))
 
 -- Prove a formula
 prove :: Formula -> Bool
@@ -23,12 +20,12 @@ axiom (_, y)             = T !? y
 
 -- Check if the sequent satisfies a rule
 rule :: Stash M -> Sequent M -> Bool
-rule f ((a :& b) : x, y) = prove1 $ f (a !: b !: x, y)
-rule f (x, (a :| b) : y) = prove1 $ f (x, a !: b !: y)
-rule f (x, (a :> b) : y) = prove1 $ f (a !: x, b !: y)
-rule f (x, (a :& b) : y) = prove1 (f (x, a !: y)) && prove1 (f (x, b !: y))
-rule f ((a :| b) : x, y) = prove1 (f (a !: x, y)) && prove1 (f (b !: x, y))
-rule f ((a :> b) : x, y) = prove1 (f (x, a !: y)) && prove1 (f (b !: x, y))
-rule f (a : x, y)        = rule (first (a !:) . f) (x, y)
-rule f (_, a : y)        = rule (second (a !:) . f) ([], y)
+rule f ((a :& b) : x, y) = prove1 $ a <: b <: f (x, y)
+rule f (x, (a :| b) : y) = prove1 $ a >: b >: f (x, y)
+rule f (x, (a :> b) : y) = prove1 $ a <: b >: f (x, y)
+rule f (x, (a :& b) : y) = prove1 (a >: z) && prove1 (b >: z) where z = f (x, y)
+rule f ((a :| b) : x, y) = prove1 (a <: z) && prove1 (b <: z) where z = f (x, y)
+rule f ((a :> b) : x, y) = prove1 (a >: z) && prove1 (b <: z) where z = f (x, y)
+rule f (a : x, y)        = rule (first (a :) . f) (x, y)
+rule f (_, a : y)        = rule (second (a :) . f) ([], y)
 rule _ _                 = False
