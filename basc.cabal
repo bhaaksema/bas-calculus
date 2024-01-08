@@ -13,13 +13,13 @@ extra-doc-files:    README.md
 
 common shared-props
     ghc-options:      -Wall
-    build-depends:    base ^>=4.17.2.0, containers ^>=0.6.7, multiset ^>=0.3.4
+    build-depends:    base ^>=4.17.2.0, containers ^>=0.6.7, multiset ^>=0.3.4, data-ordlist ^>=0.4.7
     default-language: Haskell2010
 
 library
     import:           shared-props
-    exposed-modules:  Formula, Prover
-    other-modules:    Bounding
+    exposed-modules:  Formula, Prover, Prover.G3cp
+    other-modules:    Bounding, Prover.Utils
     hs-source-dirs:   src
 
 executable basc
