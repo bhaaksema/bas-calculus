@@ -5,7 +5,7 @@ import Data.List.Ordered (insertBag, member)
 import Formula           (Formula)
 
 type Sequent a = ([Formula], a)
-type Stash a = Sequent a -> Sequent a
+type Stash a = ([Formula], a)
 type M = [Formula]
 type S = Formula
 
@@ -19,3 +19,6 @@ infixr 8 >:
 
 (!?) :: Formula -> [Formula] -> Bool
 (!?) = member
+
+pop :: Stash M -> Sequent M -> Sequent M
+pop (f1, f2) (x, y) = (reverse f1 ++ x, reverse f2 ++ y)
