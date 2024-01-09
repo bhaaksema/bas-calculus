@@ -1,30 +1,29 @@
 module Prover.G3cp where
 
-import Formula      (Formula (..))
-import Prover.Utils (M, Sequent, Stash, pop, (!?), (<:), (>:))
+import Formula  (Formula)
+import MultiSet
+
+type Sequent = (MultiSet, MultiSet)
 
 -- Prove a formula
 prove :: Formula -> Bool
-prove a = prove1 ([], [a])
+prove a = prove1 (empty, singleton a)
 
 -- Prove a sequent
-prove1 :: Sequent M -> Bool
-prove1 s = axiom s || rule ([], []) s
+prove1 :: Sequent -> Bool
+prove1 s = axiom s || rule s
 
 -- Check if the sequent satisfies an axiom
-axiom :: Sequent M -> Bool
-axiom (v@(Var _) : x, y) = v !? y || axiom (x, y)
-axiom (F : _, _)         = True
-axiom (_, y)             = T !? y
+axiom :: Sequent -> Bool
+axiom (x, y) = shareVar x y || unF x || unT y
 
 -- Check if the sequent satisfies a rule
-rule :: Stash M -> Sequent M -> Bool
-rule f ((a :& b) : x, y) = prove1 $ a <: b <: pop f (x, y)
-rule f (x, (a :| b) : y) = prove1 $ a >: b >: pop f (x, y)
-rule f (x, (a :> b) : y) = prove1 $ a <: b >: pop f (x, y)
-rule f (x, (a :& b) : y) = prove1 (a >: z) && prove1 (b >: z) where z = pop f (x, y)
-rule f ((a :| b) : x, y) = prove1 (a <: z) && prove1 (b <: z) where z = pop f (x, y)
-rule f ((a :> b) : x, y) = prove1 (a >: z) && prove1 (b <: z) where z = pop f (x, y)
-rule (f1, f2) (a : x, y) = rule (a : f1, f2) (x, y)
-rule (f1, f2) (_, a : y) = rule (f1, a : f2) ([], y)
-rule _ _                 = False
+rule :: Sequent -> Bool
+rule (x, y)
+  | Just (a, b, x1) <- popAn x = prove1 (a >. b >. x1, y)
+  | Just (a, b, y1) <- popOr y = prove1 (x, a >. b >. y1)
+  | Just (a, b, y1) <- popIm y = prove1 (a >. x, b >. y1)
+  | Just (a, b, y1) <- popAn y = prove1 (x, a >. y1) && prove1 (x, b >. y1)
+  | Just (a, b, x1) <- popOr x = prove1 (a >. x1, y) && prove1 (b >. x1, y)
+  | Just (a, b, x1) <- popIm x = prove1 (x1, a >. y) && prove1 (b >. x1, y)
+  | otherwise = False
