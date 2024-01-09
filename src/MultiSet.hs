@@ -5,8 +5,7 @@ import qualified Data.Set  as S
 import           Formula   (Formula (..))
 
 data MultiSet = M {
-  unVar :: S.Set String, unF :: Bool, unT :: Bool,
-  unFor  :: [Formula]
+  unVar :: S.Set String, unF :: Bool, unT :: Bool, unFor :: [Formula]
 }
 
 empty :: MultiSet
@@ -15,11 +14,11 @@ empty = M S.empty False False []
 singleton :: Formula -> MultiSet
 singleton a = a >. empty
 
-member :: String -> MultiSet -> Bool
-member v = S.member v . unVar
+vmember :: String -> MultiSet -> Bool
+vmember v = S.member v . unVar
 
-shareVar :: MultiSet -> MultiSet -> Bool
-shareVar x y = not $ null $ unVar x `S.intersection` unVar y
+vshare :: MultiSet -> MultiSet -> Bool
+vshare x y = not $ null $ unVar x `S.intersection` unVar y
 
 pop :: (Formula -> Bool) -> MultiSet -> Maybe (Formula, MultiSet)
 pop f m = (\x -> (x, delete x m)) <$> L.find f (unFor m)
