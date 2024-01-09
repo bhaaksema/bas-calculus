@@ -15,6 +15,11 @@ neg a = a :> F
 iff :: Formula -> Formula -> Formula
 iff a b = (a :> b) :& (b :> a)
 
+-- | Check if a formula is a variable
+isVar :: Formula -> Bool
+isVar (Var _) = True
+isVar _       = False
+
 -- | Show instance for Formula
 instance Show Formula where
   show = showBi where

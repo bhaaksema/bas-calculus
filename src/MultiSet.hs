@@ -2,7 +2,7 @@ module MultiSet where
 
 import           Data.List (uncons)
 import qualified Data.Set  as S
-import           Formula   (Formula (..))
+import           Formula   (Formula (..), isVar)
 
 data MultiSet = M {
   unVar :: S.Set String, unF :: Bool, unT :: Bool,
@@ -17,6 +17,9 @@ empty = M S.empty False False [] [] []
 singleton :: Formula -> MultiSet
 singleton a = a >. empty
 
+member :: String -> MultiSet -> Bool
+member v = S.member v . unVar
+
 shareVar :: MultiSet -> MultiSet -> Bool
 shareVar x y = not $ null $ unVar x `S.intersection` unVar y
 
@@ -26,8 +29,11 @@ popAn m = (\((a, b), xs) -> (a, b, m {unAn = xs})) <$> uncons (unAn m)
 popOr :: MultiSet -> Maybe (Formula, Formula, MultiSet)
 popOr m = (\((a, b), xs) -> (a, b, m {unOr = xs})) <$> uncons (unOr m)
 
+popVarIm :: MultiSet -> Maybe (Formula, Formula, MultiSet)
+popVarIm m = (\((a, b), xs) -> (a, b, m {unIm = xs})) <$> uncons (unIm m)
+
 popIm :: MultiSet -> Maybe (Formula, Formula, MultiSet)
-popIm m = (\((a, b), xs) -> (a, b, m {unIm = xs})) <$> uncons (unIm m)
+popIm m = (\((a, b), xs) -> (a, b, m {unIm = xs})) <$> uncons (dropWhile (isVar . fst) $ unIm m)
 
 insert :: Formula -> MultiSet -> MultiSet
 insert (Var v) m  = m { unVar = S.insert v $ unVar m }
