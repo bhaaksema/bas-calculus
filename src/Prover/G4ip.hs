@@ -1,6 +1,6 @@
 module Prover.G4ip where
 
-import           Formula     (Formula (..))
+import           Formula
 import           MultiSet
 import qualified Prover.G3cp as C
 
@@ -25,14 +25,14 @@ rule :: Sequent -> Bool
 rule (x, y)
   | F <- y = C.prove1 (x, singleton F)
   | a :> b <- y = prove1 (a >. x, b)
-  | Just (a, b, x1) <- popAn x = prove1 (a >. b >. x1, y)
-  | Just (Var v, b, x1) <- popVarIm x, v `member` x = prove1 (b >. x1, y)
-  | Just (F, _, x1) <- popIm x = prove1 (x1, y)
-  | Just (T, b, x1) <- popIm x = prove1 (b >. x1, y)
-  | Just (c :& d, b, x1) <- popIm x = prove1 (c :> (d :> b) >. x1, y)
-  | Just (c :| d, b, x1) <- popIm x = prove1 (c :> b >. d :> b >. x1, y)
+  | Just (a :& b, x1) <- pop isAnd x = prove1 (a >. b >. x1, y)
+  | Just (Var v :> b, x1) <- pop isVImp x, v `member` x = prove1 (b >. x1, y)
+  | Just (F :> _, x1) <- pop isOImp x = prove1 (x1, y)
+  | Just (T :> b, x1) <- pop isOImp x = prove1 (b >. x1, y)
+  | Just (c :& d :> b, x1) <- pop isOImp x = prove1 (c :> (d :> b) >. x1, y)
+  | Just (c :| d :> b, x1) <- pop isOImp x = prove1 (c :> b >. d :> b >. x1, y)
   | a :& b <- y = prove1 (x, a) && ((a /= b) && prove1 (x, b))
-  | Just (a, b, x1) <- popOr x = prove1 (a >. x1, y) && ((a /= b) && prove1 (b >. x1, y))
+  | Just (a :| b, x1) <- pop isOr x = prove1 (a >. x1, y) && ((a /= b) && prove1 (b >. x1, y))
   | a :| b <- y, prove1 (x, a) || ((a /= b) && prove1 (x, b)) = True
-  | Just (c :> d, b, x1) <- popIm x = prove1 (d :> b >. x1, c :> d) && prove1 (b >. x1, y)
+  | Just ((c :> d) :> b, x1) <- pop isOImp x = prove1 (d :> b >. x1, c :> d) && prove1 (b >. x1, y)
   | otherwise = False
