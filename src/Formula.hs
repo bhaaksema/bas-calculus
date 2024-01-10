@@ -21,14 +21,14 @@ isV (Var _) = True
 isV _       = False
 
 -- | Check if a formula is a conjunction
-isA :: Formula -> Bool
-isA (_ :& _) = True
-isA _        = False
+isC :: Formula -> Bool
+isC (_ :& _) = True
+isC _        = False
 
 -- | Check if a formula is a disjunction
-isO :: Formula -> Bool
-isO (_ :| _) = True
-isO _        = False
+isD :: Formula -> Bool
+isD (_ :| _) = True
+isD _        = False
 
 -- | Check if a formula is an implication
 isI :: Formula -> Bool

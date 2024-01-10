@@ -5,7 +5,7 @@ import qualified Data.Set  as S
 import           Formula   (Formula (..))
 
 data MultiSet = M {
-  unVar :: S.Set String, unF :: Bool, unT :: Bool, unFor :: [Formula]
+  unVar :: S.Set String, unF :: Bool, unT :: Bool, unBin :: [Formula]
 }
 
 empty :: MultiSet
@@ -21,11 +21,11 @@ vshare :: MultiSet -> MultiSet -> Bool
 vshare x y = not $ null $ unVar x `S.intersection` unVar y
 
 pop :: (Formula -> Bool) -> MultiSet -> Maybe (Formula, MultiSet)
-pop f m = (\x -> (x, delete x)) <$> L.find f (unFor m) where
+pop f m = (\x -> (x, delete x)) <$> L.find f (unBin m) where
   delete (Var v) = m { unVar = S.delete v $ unVar m }
   delete F       = m { unF = False }
   delete T       = m { unT = False }
-  delete a       = m { unFor = L.delete a $ unFor m }
+  delete a       = m { unBin = L.delete a $ unBin m }
 
 (<.) :: (Formula -> Bool) -> MultiSet -> Maybe (Formula, MultiSet)
 (<.) = pop
@@ -35,7 +35,7 @@ insert :: Formula -> MultiSet -> MultiSet
 insert (Var v) m = m { unVar = S.insert v $ unVar m }
 insert F m       = m { unF = True }
 insert T m       = m { unT = True }
-insert a m       = m { unFor = a : unFor m }
+insert a m       = m { unBin = a : unBin m }
 
 (>.) :: Formula -> MultiSet -> MultiSet
 (>.) = insert
