@@ -16,7 +16,7 @@ prove a = prove1 (M.empty, a)
 prove1 :: Sequent -> Bool
 prove1 (x, y)
   -- Initial sequent
-  | Var v <- y, v `M.vmember` x = True
+  | V s <- y, s `M.vmember` x = True
   | M.unF x || y == T = True
   -- Glivenko's optimisation
   | F <- y = C.prove1 (x, M.singleton F)
@@ -25,7 +25,7 @@ prove1 (x, y)
   -- Left conjunction
   | Just (a :& b, x1) <- isC <. x = prove1 (a >. b >. x1, y)
   -- Left implication (invertible)
-  | Just (Var v :> b, x1)  <- isVI <. x, v `M.vmember` x = prove1 (b >. x1, y)
+  | Just (V s :> b, x1)    <- isVI <. x, s `M.vmember` x = prove1 (b >. x1, y)
   | Just (F :> _, x1)      <- isXI <. x = prove1 (x1, y)
   | Just (T :> b, x1)      <- isXI <. x = prove1 (b >. x1, y)
   | Just (c :& d :> b, x1) <- isXI <. x = prove1 (c :> (d :> b) >. x1, y)

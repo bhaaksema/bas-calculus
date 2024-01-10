@@ -1,7 +1,7 @@
 module Formula where
 
 -- | Propositional formula
-data Formula = Var String | F | T
+data Formula = V String | F | T
   | Formula :& Formula
   | Formula :| Formula
   | Formula :> Formula
@@ -17,8 +17,8 @@ iff a b = (a :> b) :& (b :> a)
 
 -- | Check if a formula is a variable
 isV :: Formula -> Bool
-isV (Var _) = True
-isV _       = False
+isV (V _) = True
+isV _     = False
 
 -- | Check if a formula is a conjunction
 isC :: Formula -> Bool
@@ -47,10 +47,10 @@ isXI a = isI a && not (isVI a)
 -- | Show instance for Formula
 instance Show Formula where
   show = showBi where
-    showUn (Var v) = v
-    showUn F       = "⊥"
-    showUn T       = "⊤"
-    showUn f       = "(" ++ show f ++ ")"
+    showUn (V v) = v
+    showUn F     = "⊥"
+    showUn T     = "⊤"
+    showUn f     = "(" ++ show f ++ ")"
     showBi (a :& b) = showUn a ++ " ∧ " ++ showUn b
     showBi (a :| b) = showUn a ++ " ∨ " ++ showUn b
     showBi (a :> b) = showUn a ++ " → " ++ showUn b

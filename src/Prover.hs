@@ -26,12 +26,12 @@ unary :: Extension -> Sequent -> Bool
 unary _ (_, T) = True
 unary as (facts, a :> b) = unary as (facts += a, b)
 unary as@(bf, old) (facts, e) = initial e || leftUnary (M.toList facts) where
-  initial (Var _) = e `M.member` facts
-  initial _       = False
+  initial (V _) = e `M.member` facts
+  initial _     = False
   leftUnary (F : _ ) = True
   leftUnary (a :& b : _) = unary as (facts -= (a :& b) += a += b, e)
   leftUnary (a :> b : next) = let fs = facts -= (a :> b) in case a of
-    Var _  -> if a `M.member` facts then unary as (fs += b, e) else leftUnary next
+    V _    -> if a `M.member` facts then unary as (fs += b, e) else leftUnary next
     F      -> unary as (fs, e)
     T      -> unary as (fs += b, e)
     c :& d -> unary as (fs += (c :> (d :> b)), e)
