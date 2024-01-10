@@ -16,33 +16,33 @@ iff :: Formula -> Formula -> Formula
 iff a b = (a :> b) :& (b :> a)
 
 -- | Check if a formula is a variable
-isVar :: Formula -> Bool
-isVar (Var _) = True
-isVar _       = False
+isV :: Formula -> Bool
+isV (Var _) = True
+isV _       = False
 
 -- | Check if a formula is a conjunction
-isAnd :: Formula -> Bool
-isAnd (_ :& _) = True
-isAnd _        = False
+isA :: Formula -> Bool
+isA (_ :& _) = True
+isA _        = False
 
 -- | Check if a formula is a disjunction
-isOr :: Formula -> Bool
-isOr (_ :| _) = True
-isOr _        = False
+isO :: Formula -> Bool
+isO (_ :| _) = True
+isO _        = False
 
 -- | Check if a formula is an implication
-isImp :: Formula -> Bool
-isImp (_ :> _) = True
-isImp _        = False
+isI :: Formula -> Bool
+isI (_ :> _) = True
+isI _        = False
 
 -- | Check if a formula is an implication with a variable on the left
-isVImp :: Formula -> Bool
-isVImp (a :> _) = isVar a
-isVImp _        = False
+isVI :: Formula -> Bool
+isVI (a :> _) = isV a
+isVI _        = False
 
 -- | Check if a formula is an implication withithout a variable on the left
-isOImp :: Formula -> Bool
-isOImp a = isImp a && not (isVImp a)
+isXI :: Formula -> Bool
+isXI a = isI a && not (isVI a)
 
 -- | Show instance for Formula
 instance Show Formula where

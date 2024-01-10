@@ -21,13 +21,15 @@ vshare :: MultiSet -> MultiSet -> Bool
 vshare x y = not $ null $ unVar x `S.intersection` unVar y
 
 pop :: (Formula -> Bool) -> MultiSet -> Maybe (Formula, MultiSet)
-pop f m = (\x -> (x, delete x m)) <$> L.find f (unFor m)
+pop f m = (\x -> (x, delete x)) <$> L.find f (unFor m) where
+  delete (Var v) = m { unVar = S.delete v $ unVar m }
+  delete F       = m { unF = False }
+  delete T       = m { unT = False }
+  delete a       = m { unFor = L.delete a $ unFor m }
 
-delete :: Formula -> MultiSet -> MultiSet
-delete (Var v) m = m { unVar = S.delete v $ unVar m }
-delete F m       = m { unF = False }
-delete T m       = m { unT = False }
-delete a m       = m { unFor = L.delete a $ unFor m }
+(<.) :: (Formula -> Bool) -> MultiSet -> Maybe (Formula, MultiSet)
+(<.) = pop
+infix 9 <.
 
 insert :: Formula -> MultiSet -> MultiSet
 insert (Var v) m = m { unVar = S.insert v $ unVar m }
