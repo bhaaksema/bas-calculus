@@ -7,6 +7,21 @@ import qualified MultiSet as M
 -- | Multi succedent sequent
 type Sequent = (M.MultiSet, M.MultiSet)
 
+-- | Check if conjunction
+isC :: Formula -> Bool
+isC (_ :& _) = True
+isC _        = False
+
+-- | Check if disjunction
+isD :: Formula -> Bool
+isD (_ :| _) = True
+isD _        = False
+
+-- | Check if implication
+isI :: Formula -> Bool
+isI (_ :> _) = True
+isI _        = False
+
 -- | Prove a classical theorem
 prove :: Formula -> Bool
 prove a = prove1 (M.empty, M.singleton a)

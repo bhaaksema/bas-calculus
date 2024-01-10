@@ -5,12 +5,11 @@ import qualified Data.Set  as S
 import           Formula   (Formula (..))
 
 data MultiSet = M {
-  unVar :: S.Set String, unF :: Bool, unT :: Bool,
-  unBin :: [Formula], unSta :: [Formula]
+  unVar :: S.Set String, unF :: Bool, unT :: Bool, unBin :: [Formula]
 }
 
 empty :: MultiSet
-empty = M S.empty False False [] []
+empty = M S.empty False False []
 
 singleton :: Formula -> MultiSet
 singleton a = a >. empty
@@ -22,7 +21,10 @@ vshare :: MultiSet -> MultiSet -> Bool
 vshare x y = not $ null $ unVar x `S.intersection` unVar y
 
 pop :: (Formula -> Bool) -> MultiSet -> Maybe (Formula, MultiSet)
-pop f m = (\x -> (x, m { unBin = L.delete x (unBin m) })) <$> L.find f (unBin m)
+pop f m = (\x -> (x, delete x m)) <$> L.find f (unBin m)
+
+delete :: Formula -> MultiSet -> MultiSet
+delete a m = m { unBin = L.delete a $ unBin m }
 
 (<.) :: (Formula -> Bool) -> MultiSet -> Maybe (Formula, MultiSet)
 (<.) = pop
@@ -37,9 +39,3 @@ insert a m     = m { unBin = a : unBin m }
 (>.) :: Formula -> MultiSet -> MultiSet
 (>.) = insert
 infixr 8 >.
-
-stash :: Formula -> MultiSet -> MultiSet
-stash a m = m { unSta = a : unSta m }
-
-unstash :: MultiSet -> MultiSet
-unstash m = m { unBin = unBin m ++ unSta m, unSta = [] }
