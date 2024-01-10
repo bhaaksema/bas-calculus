@@ -1,15 +1,15 @@
 module Main (main) where
 
-import Formula   (Formula (..), neg, iff)
-import Prover    (prove)
+import Formula (Formula (..), iff, neg)
+import Prover  (prove)
 
 a :: Formula; b :: Formula; c :: Formula
-(a, b, c) = (Var "a", Var "b", Var "c")
+(a, b, c) = (V "a", V "b", V "c")
 
 tests :: [([Formula], Formula, Bool)]
 tests = map (\(f, expect) -> ([], f, expect))
   [ (a :> a, True)
-  , (F, False) 
+  , (F, False)
   , (a :> (b :> a), True) -- left-weakening axiom
   , ((a :> (a :> b)) :> (a :> b), True) -- contraction axiom
   , ((a :> (b :> c)) :> (b :> (a :> c)), True) -- exchange axiom
