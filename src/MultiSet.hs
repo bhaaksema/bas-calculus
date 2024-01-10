@@ -5,11 +5,12 @@ import qualified Data.Set  as S
 import           Formula   (Formula (..))
 
 data MultiSet = M {
-  unVar :: S.Set String, unF :: Bool, unT :: Bool, unBin :: [Formula]
+  unVar :: S.Set String, unF :: Bool, unT :: Bool,
+  unBin :: [Formula], unSta :: [Formula]
 }
 
 empty :: MultiSet
-empty = M S.empty False False []
+empty = M S.empty False False [] []
 
 singleton :: Formula -> MultiSet
 singleton a = a >. empty
@@ -36,3 +37,9 @@ insert a m     = m { unBin = a : unBin m }
 (>.) :: Formula -> MultiSet -> MultiSet
 (>.) = insert
 infixr 8 >.
+
+stash :: Formula -> MultiSet -> MultiSet
+stash a m = m { unSta = a : unSta m }
+
+unstash :: MultiSet -> MultiSet
+unstash m = m { unBin = unBin m ++ unSta m, unSta = [] }

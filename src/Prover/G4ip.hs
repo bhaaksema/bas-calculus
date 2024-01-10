@@ -14,7 +14,7 @@ prove a = prove1 (M.empty, a)
 
 -- | Check axioms and rules
 prove1 :: Sequent -> Bool
-prove1 (x, y)
+prove1 (z, y)
   -- Initial sequent
   | V s <- y, s `M.vmember` x = True
   | M.unF x || y == T = True
@@ -25,17 +25,26 @@ prove1 (x, y)
   -- Left conjunction
   | Just (a :& b, x1) <- isC <. x = prove1 (a >. b >. x1, y)
   -- Left implication (invertible)
-  | Just (V s :> b, x1)    <- isVI <. x, s `M.vmember` x = prove1 (b >. x1, y)
-  | Just (F :> _, x1)      <- isXI <. x = prove1 (x1, y)
-  | Just (T :> b, x1)      <- isXI <. x = prove1 (b >. x1, y)
-  | Just (c :& d :> b, x1) <- isXI <. x = prove1 (c :> (d :> b) >. x1, y)
-  | Just (c :| d :> b, x1) <- isXI <. x = prove1 (c :> b >. d :> b >. x1, y)
+  | Just (F :> _, x1)        <- isXI <. x = prove1 (x1, y)
+  | Just (T :> b, x1)        <- isXI <. x = prove1 (b >. x1, y)
+  | Just ((c :& d) :> b, x1) <- isXI <. x = prove1 (c :> (d :> b) >. x1, y)
+  | Just ((c :| d) :> b, x1) <- isXI <. x = prove1 (c :> b >. d :> b >. x1, y)
   -- Right conjunction
   | a :& b <- y = prove1 (x, a) && prove1 (x, b)
   -- Left disjunction
   | Just (a :| b, x1) <- isD <. x = prove1 (a >. x1, y) && prove1 (b >. x1, y)
-  -- Right disjunction
+  | otherwise = prove2 (x, y)
+  where x = M.unstash z
+
+-- | Check special rules
+prove2 :: Sequent -> Bool
+prove2 (x, y)
+  -- Left implication (invertible cont.)
+  | Just (a@(V s :> b), x1) <- isVI <. x =
+    if s `M.vmember` x then prove1 (b >. x1, y) else prove2 (M.stash a x1, y)
+  -- Right disjunction (non-invertible)
   | a :| b <- y, prove1 (x, a) || prove1 (x, b) = True
   -- Left implication (non-invertible)
-  | Just ((c :> d) :> b, x1) <- isXI <. x = prove1 (d :> b >. x1, c :> d) && prove1 (b >. x1, y)
+  | Just (a@((c :> d) :> b), x1) <- const True <. x =
+    (prove1 (d :> b >. x1, c :> d) && prove1 (b >. x1, y)) || prove2 (M.stash a x1, y)
   | otherwise = False

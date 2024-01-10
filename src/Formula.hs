@@ -15,34 +15,35 @@ neg a = a :> F
 iff :: Formula -> Formula -> Formula
 iff a b = (a :> b) :& (b :> a)
 
--- | Check if a formula is a variable
+-- | Check if variable
 isV :: Formula -> Bool
 isV (V _) = True
 isV _     = False
 
--- | Check if a formula is a conjunction
+-- | Check if conjunction
 isC :: Formula -> Bool
 isC (_ :& _) = True
 isC _        = False
 
--- | Check if a formula is a disjunction
+-- | Check if disjunction
 isD :: Formula -> Bool
 isD (_ :| _) = True
 isD _        = False
 
--- | Check if a formula is an implication
+-- | Check if implication
 isI :: Formula -> Bool
 isI (_ :> _) = True
 isI _        = False
 
--- | Check if a formula is an implication with a variable on the left
+-- | Check if (V s :> b)
 isVI :: Formula -> Bool
 isVI (a :> _) = isV a
 isVI _        = False
 
--- | Check if a formula is an implication withithout a variable on the left
+-- | Check if (a :> b), not (isVI a), not (isI a)
 isXI :: Formula -> Bool
-isXI a = isI a && not (isVI a)
+isXI (a :> _) = not (isI a || isVI a)
+isXI _        = False
 
 -- | Show instance for Formula
 instance Show Formula where
