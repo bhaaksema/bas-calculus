@@ -8,18 +8,18 @@ import qualified Prover.G3cp as C
 -- | Single succedent sequent
 type Sequent = (M.MultiSet, Formula)
 
-leftInvImp :: Formula -> Bool
-leftInvImp (V _ :> _) = False
-leftInvImp (a :> _)   = not (C.isI a)
-leftInvImp _          = False
+isIA :: Formula -> Bool
+isIA (V _ :> _) = False
+isIA (a :> _)   = not (C.isI a)
+isIA _          = False
 
-leftVarImp :: M.MultiSet -> Formula -> Bool
-leftVarImp x (V s :> _) = s `M.vmember` x
-leftVarImp _ _          = False
+isIB :: M.MultiSet -> Formula -> Bool
+isIB x (V s :> _) = s `M.vmember` x
+isIB _ _          = False
 
-leftImpImp :: Sequent -> Formula -> Bool
-leftImpImp (x, y) a@((c :> d) :> b) = prove1 (d :> b >. x1, c :> d) && prove1 (b >. x1, y) where x1 = M.delete a x
-leftImpImp _ _ = False
+isIC :: M.MultiSet -> Formula -> Bool
+isIC x (a@(_ :> d) :> b) = prove1 (d :> b >. M.delete (a :> b) x, a)
+isIC _ _                 = False
 
 -- | Prove a intuitionistic theorem
 prove :: Formula -> Bool
@@ -37,19 +37,18 @@ prove1 (x, y)
   | a :> b <- y = prove1 (a >. x, b)
   -- Left conjunction
   | Just (a :& b, x1) <- C.isC <. x = prove1 (a >. b >. x1, y)
-  -- Left implication (invertible)
-  | Just (F :> _, x1)        <- leftInvImp <. x = prove1 (x1, y)
-  | Just (T :> b, x1)        <- leftInvImp <. x = prove1 (b >. x1, y)
-  | Just ((c :& d) :> b, x1) <- leftInvImp <. x = prove1 (c :> (d :> b) >. x1, y)
-  | Just ((c :| d) :> b, x1) <- leftInvImp <. x = prove1 (c :> b >. d :> b >. x1, y)
+  -- Left implication
+  | Just (F :> _, x1)        <- isIA <. x = prove1 (x1, y)
+  | Just (T :> b, x1)        <- isIA <. x = prove1 (b >. x1, y)
+  | Just ((c :& d) :> b, x1) <- isIA <. x = prove1 (c :> (d :> b) >. x1, y)
+  | Just ((c :| d) :> b, x1) <- isIA <. x = prove1 (c :> b >. d :> b >. x1, y)
   -- Right conjunction
   | a :& b <- y = prove1 (x, a) && prove1 (x, b)
   -- Left disjunction
   | Just (a :| b, x1) <- C.isD <. x = prove1 (a >. x1, y) && prove1 (b >. x1, y)
-  -- Left implication (invertible cont.)
-  | Just (_ :> b, x1) <- leftVarImp x <. x = prove1 (b >. x1, y)
-  -- Right disjunction (non-invertible)
-  | a :| b <- y, prove1 (x, a) || prove1 (x, b) = True
-  -- Left implication (non-invertible)
-  | Just _ <- leftImpImp (x, y) <. x = True
+  -- Left implication (cont.)
+  | Just (_ :> b, x1) <- isIB x <. x = prove1 (b >. x1, y)
+  | Just (_ :> b, x1) <- isIC x <. x = prove1 (b >. x1, y)
+  -- Right disjunction
+  | a :| b <- y = prove1 (x, a) || prove1 (x, b)
   | otherwise = False
