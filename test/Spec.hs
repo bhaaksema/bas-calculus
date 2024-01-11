@@ -3,12 +3,13 @@ module Main (main) where
 import           Formula     (Formula (..), iff, neg)
 import qualified Prover.G3cp as C
 import qualified Prover.G4ip as I
+import qualified Prover.G4sp as S
 
 a :: Formula; b :: Formula; c :: Formula
 (a, b, c) = (V "a", V "b", V "c")
 
-tests :: [(Formula, Bool)]
-tests =
+itests :: [(Formula, Bool)]
+itests =
   [ (F, False)
   , (a :> a, True)
   , (a :> (b :> a), True) -- left-weakening axiom
@@ -32,18 +33,19 @@ tests =
   , (neg (neg (a :| neg a)), True) -- Ono exercise 1.13
   , ((neg a:| neg b) :> neg (a :& b), True) -- Ono example 1.8
   ]
-  -- [ ([a :| neg a], neg (neg b) :> b, True)
-  -- , ([neg (neg b) :> b], a :| neg a, True)
-  -- , ([a :| neg a], F, False)
-  -- ]
 
 check :: (Formula -> Bool) -> [(Formula, Bool)] -> [(Formula, Bool)]
 check p = map (\(f, e) -> (f, p f == e))
 
 main :: IO ()
 main = do
-  let r1 = check C.prove (head tests : map (\(x, _) -> (x, True)) (tail tests))
-  let r2 = check I.prove tests
+  let ctests = head itests : map (\(x, _) -> (x, True)) (tail itests)
+  let r1 = check C.prove ctests
+  let r2 = check I.prove itests
+  let r3 = check (S.prove [a :| neg a]) ((neg (neg b) :> b, True) : ctests)
+  let r4 = check (S.prove [neg (neg b) :> b]) ((a :| neg a, True) : ctests)
   mapM_ (\(f, res) -> putStrLn $ (if res then "✅" else "⛔") ++ " C " ++ show f) r1
   mapM_ (\(f, res) -> putStrLn $ (if res then "✅" else "⛔") ++ " I " ++ show f) r2
-  if all snd (r1 ++ r2) then putStrLn "All tests passed!" else error "Some tests failed!"
+  mapM_ (\(f, res) -> putStrLn $ (if res then "✅" else "⛔") ++ " S " ++ show f) r3
+  mapM_ (\(f, res) -> putStrLn $ (if res then "✅" else "⛔") ++ " T " ++ show f) r4
+  if all snd (r1 ++ r2 ++ r3 ++ r4) then putStrLn "All tests passed!" else error "Some tests failed!"
