@@ -7,24 +7,9 @@ import           Formula
 -- | Axiom is kind of a formula
 type Axiom = Formula
 
--- | Get all unique variables of a formula
-vars :: Formula -> S.Set String
-vars (a :& b) = vars a `S.union` vars b
-vars (a :| b) = vars a `S.union` vars b
-vars (a :> b) = vars a `S.union` vars b
-vars (V str)  = S.singleton str
-vars _        = S.empty
-
--- | Get all unique subformulas of a formula
-formulas :: Formula -> S.Set Formula
-formulas (a :& b) = S.insert (a :& b) $ formulas a `S.union` formulas b
-formulas (a :| b) = S.insert (a :| b) $ formulas a `S.union` formulas b
-formulas (a :> b) = S.insert (a :> b) $ formulas a `S.union` formulas b
-formulas a        = S.singleton a
-
 -- | Get all fusions of subformulas of a formula
 fusions :: Formula -> S.Set Formula
-fusions = S.map fuse . S.delete S.empty . S.powerSet . formulas
+fusions = S.map fuse . S.delete S.empty . S.powerSet . fors
   where fuse = foldl1 (:&)
 
 -- | Substitution
@@ -48,7 +33,7 @@ var :: [Axiom] -> Formula -> [Formula]
 var = instances (S.map V . vars)
 
 for :: [Axiom] -> Formula -> [Formula]
-for = instances formulas
+for = instances fors
 
 set :: [Axiom] -> Formula -> [Formula]
 set = instances fusions
