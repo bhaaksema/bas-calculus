@@ -17,9 +17,13 @@ isIB :: M.MultiSet -> Formula -> Bool
 isIB x (V s :> _) = s `M.vmember` x
 isIB _ _          = False
 
-isIC :: M.MultiSet -> Formula -> Bool
-isIC x (a@(_ :> d) :> b) = prove1 (d :> b >. M.delete (a :> b) x, a)
-isIC _ _                 = False
+isIC :: Sequent -> Formula -> Bool
+isIC (x, y) (a@(_ :> _) :> b) = not (prove1 (b >. M.delete (a :> b) x, y))
+isIC _ _                      = False
+
+isID :: M.MultiSet -> Formula -> Bool
+isID x (a@(_ :> d) :> b) = prove1 (d :> b >. M.delete (a :> b) x, a)
+isID _ _                 = False
 
 -- | Prove a intuitionistic theorem
 prove :: Formula -> Bool
@@ -46,9 +50,11 @@ prove1 (x, y)
   | a :& b <- y = prove1 (x, a) && prove1 (x, b)
   -- Left disjunction
   | Just (a :| b, x1) <- C.isD <. x = prove1 (a >. x1, y) && prove1 (b >. x1, y)
-  -- Left implication (cont.)
+  -- Left implication (variable)
   | Just (_ :> b, x1) <- isIB x <. x = prove1 (b >. x1, y)
-  | Just (_ :> b, x1) <- isIC x <. x = prove1 (b >. x1, y)
+  -- Left implication (nested)
+  | Just _ <- isIC (x, y) <. x = False
+  | Just _ <- isID x <. x = True
   -- Right disjunction
   | a :| b <- y = prove1 (x, a) || prove1 (x, b)
   | otherwise = False
