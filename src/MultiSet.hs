@@ -26,10 +26,6 @@ pop f m = (\x -> (x, delete x m)) <$> L.find f (unBin m)
 delete :: Formula -> MultiSet -> MultiSet
 delete a m = m { unBin = L.delete a $ unBin m }
 
-(<+) :: (Formula -> Bool) -> MultiSet -> Maybe (Formula, MultiSet)
-(<+) = pop
-infix 9 <+
-
 insert :: Formula -> MultiSet -> MultiSet
 insert (V s) m = m { unVar = S.insert s $ unVar m }
 insert F m     = m { unF = True }
