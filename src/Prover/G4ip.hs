@@ -1,16 +1,13 @@
 {-# LANGUAGE LambdaCase #-}
 module Prover.G4ip where
 
-import           Formula
+import           Formula     (Formula (..))
 import           MultiSet    ((+>))
 import qualified MultiSet    as M
 import qualified Prover.G3cp as C
 
 -- | Single succedent sequent
 type Sequent = (M.MultiSet, Formula)
-
-getI :: M.MultiSet -> Maybe (Formula, M.MultiSet)
-getI x = M.pop (\case (V s :> _) -> s `M.vmember` x; (a :> _) -> not (C.isI a); _ -> False) x
 
 -- | Prove a intuitionistic theorem
 prove :: Formula -> Bool
@@ -27,24 +24,27 @@ prove1 (x, y)
   -- Right implication
   | a :> b <- y = prove1 (a +> x, b)
   -- Left conjunction
-  | Just (a :& b, x1) <- C.getC x = prove1 (a +> b +> x1, y)
+  | Just (a, b, x1) <- M.cget x = prove1 (a +> b +> x1, y)
   -- Left implication
-  | Just (V _ :> b, x1) <- getI x = prove1 (b +> x1, y)
-  | Just (F :> _, x1) <- getI x = prove1 (x1, y)
-  | Just (T :> b, x1) <- getI x = prove1 (b +> x1, y)
-  | Just ((c :& d) :> b, x1) <- getI x = prove1 (c :> (d :> b) +> x1, y)
-  | Just ((c :| d) :> b, x1) <- getI x = prove1 (c :> b +> d :> b +> x1, y)
+  | Just (V _, b, x1) <- iget x = prove1 (b +> x1, y)
+  | Just (F, _, x1) <- iget x = prove1 (x1, y)
+  | Just (T, b, x1) <- iget x = prove1 (b +> x1, y)
+  | Just (c :& d, b, x1) <- iget x = prove1 (c :> (d :> b) +> x1, y)
+  | Just (c :| d, b, x1) <- iget x = prove1 (c :> b +> d :> b +> x1, y)
   -- Right conjunction
   | a :& b <- y = prove1 (x, a) && prove1 (x, b)
   -- Left disjunction
-  | Just (a :| b, x1) <- C.getD x = prove1 (a +> x1, y) && prove1 (b +> x1, y)
+  | Just (a, b, x1) <- M.dget x = prove1 (a +> x1, y) && prove1 (b +> x1, y)
   -- Left implication (alt.)
-  -- | Just _ <- M.pop (\case e@((_ :> _) :> b) -> not (prove1 (b +> M.delete e x, y)); _ -> False) x = False
-  -- | Just _ <- M.pop (\case e@(a@(_ :> d) :> b) -> prove1 (d :> b +> M.delete e x, a); _ -> False) x = True
+  -- | Just _ <- M.ifind (\case e@(_ :> _, b) -> not (prove1 (b +> M.idel e x, y)); _ -> False) x = False
+  -- | Just _ <- M.ifind (\case e@(a@(_ :> d), b) -> prove1 (d :> b +> M.idel e x, a); _ -> False) x = True
   -- Right disjunction
   | a :| b <- y, prove1 (x, a) || prove1 (x, b) = True
   -- Left implication (cont.)
-  | Just (_ :> b, x1) <- M.pop (\case
-    e@(a@(_ :> d) :> b) -> prove1 (d :> b +> M.delete e x, a)
+  | Just (_, b, x1) <- M.ifind (\case
+    e@(a@(_ :> d), b) -> prove1 (d :> b +> M.idel e x, a)
     _ -> False) x = prove1 (b +> x1, y)
   | otherwise = False
+
+iget :: M.MultiSet -> Maybe (Formula, Formula, M.MultiSet)
+iget x = M.ifind (\case (V s, _) -> s `M.vmember` x; (_ :> _, _) -> False; _ -> True) x
