@@ -41,7 +41,7 @@ dget m = (\((a, b), ds) -> (a, b, m { unD = ds })) <$> L.uncons (unD m)
 iget :: MultiSet -> Maybe (Formula, Formula, MultiSet)
 iget = ifind (const True)
 
--- | Get an implication from the multiset that satisfies a predicate
+-- | Find an implication from the multiset that satisfies a predicate
 ifind :: ((Formula, Formula) -> Bool) -> MultiSet -> Maybe (Formula, Formula, MultiSet)
 ifind f m = (\x@(a, b) -> (a, b, idel x m)) <$> L.find f (unI m)
 
