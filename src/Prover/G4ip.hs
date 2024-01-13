@@ -1,5 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
-module Prover.G4ip where
+module Prover.G4ip (Sequent, prove, prove1) where
 
 import           Formula     (Formula (..))
 import           MultiSet    ((+>))
@@ -17,8 +17,7 @@ prove a = prove1 (M.empty, a)
 prove1 :: Sequent -> Bool
 prove1 (x, y)
   -- Initial sequent
-  | V s <- y, s `M.vmember` x = True
-  | M.unF x || y == T = True
+  | y `M.vmember` x || M.unF x || y == T = True
   -- Glivenko's optimisation
   | F <- y = C.prove1 (x, M.singleton F)
   -- Right implication
@@ -47,4 +46,4 @@ prove1 (x, y)
   | otherwise = False
 
 iget :: M.MultiSet -> Maybe (Formula, Formula, M.MultiSet)
-iget x = M.ifind (\case (V s, _) -> s `M.vmember` x; (_ :> _, _) -> False; _ -> True) x
+iget x = M.ifind (\case (V s, _) -> V s `M.vmember` x; (_ :> _, _) -> False; _ -> True) x
