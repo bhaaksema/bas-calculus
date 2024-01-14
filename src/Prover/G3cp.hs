@@ -28,4 +28,5 @@ prove1 (x, y)
   | Just (a, b, x1) <- M.dget x = prove1 (a +> x1, y) && prove1 (b +> x1, y)
   -- Left implication
   | Just (a, b, x1) <- M.iget x = prove1 (x1, a +> y) && prove1 (b +> x1, y)
+  -- Failed to prove
   | otherwise = False

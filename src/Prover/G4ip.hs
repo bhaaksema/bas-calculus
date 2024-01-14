@@ -1,5 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
-module Prover.G4ip (Sequent, prove, prove1) where
+module Prover.G4ip where
 
 import           Formula     (Formula (..))
 import           MultiSet    ((+>))
@@ -25,32 +25,25 @@ prove1 (x, y)
   -- Left conjunction
   | Just (a, b, x1) <- M.cget x = prove1 (a +> b +> x1, y)
   -- Left implication
-  | Just (V _, b, x1) <- iget x = prove1 (b +> x1, y)
-  | Just (F, _, x1) <- iget x = prove1 (x1, y)
-  | Just (T, b, x1) <- iget x = prove1 (b +> x1, y)
-  | Just (c :& d, b, x1) <- iget x = prove1 (c :> (d :> b) +> x1, y)
-  | Just (c :| d, b, x1) <- iget x = prove1 (c :> b +> d :> b +> x1, y)
+  | Just (V _, b, x1) <- iget = prove1 (b +> x1, y)
+  | Just (F, _, x1) <- iget = prove1 (x1, y)
+  | Just (T, b, x1) <- iget = prove1 (b +> x1, y)
+  | Just (c :& d, b, x1) <- iget = prove1 (c :> (d :> b) +> x1, y)
+  | Just (c :| d, b, x1) <- iget = prove1 (c :> b +> d :> b +> x1, y)
   -- Right conjunction
   | a :& b <- y = prove1 (x, a) && prove1 (x, b)
   -- Left disjunction
   | Just (a, b, x1) <- M.dget x = prove1 (a +> x1, y) && prove1 (b +> x1, y)
-  -- Left implication (cont.)
-  | Just _ <- rget x y = False
-  | Just _ <- lget x = True
+  -- Left implication (non-invertible)
+  | Just _ <- rget = False | Just _ <- lget = True
   -- Right disjunction
   | a :| b <- y, prove1 (x, a) || prove1 (x, b) = True
-  -- Left implication (alt.)
-  -- | Just (_, b, x1) <- lget x = prove1 (b +> x1, y)
+  -- Failed to prove
   | otherwise = False
-
--- | Get the conclusion of an invertible implication rule instance
-iget :: M.MultiSet -> Maybe (Formula, Formula, M.MultiSet)
-iget x = M.ifind (\case (V s, _) -> V s `M.vmember` x; (_ :> _, _) -> False; _ -> True) x
-
--- | Get the conclusion of a left nested implication rule instance with provable left premise
-lget :: M.MultiSet -> Maybe (Formula, Formula, M.MultiSet)
-lget x = M.ifind (\case e@(a@(_ :> d), b) -> prove1 (d :> b +> M.idel e x, a); _ -> False) x
-
--- | Get the conclusion of a left nested implication rule instance with unprovable right premise
-rget :: M.MultiSet -> Formula -> Maybe (Formula, Formula, M.MultiSet)
-rget x y = M.ifind (\case e@(_ :> _, b) -> not (prove1 (b +> M.idel e x, y)); _ -> False) x
+  where
+  -- Get the conclusion of an invertible implication rule instance
+  iget = M.ifind (\case (V s, _) -> V s `M.vmember` x; (_ :> _, _) -> False; _ -> True) x
+  -- Get the conclusion of a left nested implication rule instance with provable left premise
+  lget = M.ifind (\case e@(a@(_ :> d), b) -> prove1 (d :> b +> M.idel e x, a); _ -> False) x
+  -- Get the conclusion of a left nested implication rule instance with unprovable right premise
+  rget = M.ifind (\case e@(_ :> _, b) -> not (prove1 (b +> M.idel e x, y)); _ -> False) x
