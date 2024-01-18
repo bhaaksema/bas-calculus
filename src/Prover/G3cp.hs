@@ -1,11 +1,11 @@
 module Prover.G3cp where
 
 import           Formula  (Formula)
-import           MultiSet ((+>))
-import qualified MultiSet as M
+import           Multiset ((+>))
+import qualified Multiset as M
 
 -- | Multi succedent sequent
-type Sequent = (M.MultiSet, M.MultiSet)
+type Sequent = (M.Multiset, M.Multiset)
 
 -- | Prove a classical theorem
 prove :: Formula -> Bool

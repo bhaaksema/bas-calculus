@@ -19,7 +19,7 @@ common shared-props
 library
     import:           shared-props
     exposed-modules:  Formula, Prover.G3cp, Prover.G4ip, Prover.G4sp
-    other-modules:    Bounding, MultiSet
+    other-modules:    Bounding, Multiset
     hs-source-dirs:   src
 
 executable basc

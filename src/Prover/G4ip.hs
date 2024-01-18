@@ -2,12 +2,12 @@
 module Prover.G4ip where
 
 import           Formula     (Formula (..))
-import           MultiSet    ((+>))
-import qualified MultiSet    as M
+import           Multiset    ((+>))
+import qualified Multiset    as M
 import qualified Prover.G3cp as C
 
 -- | Single succedent sequent
-type Sequent = (M.MultiSet, Formula)
+type Sequent = (M.Multiset, Formula)
 
 -- | Prove a intuitionistic theorem
 prove :: Formula -> Bool

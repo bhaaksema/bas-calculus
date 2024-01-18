@@ -2,7 +2,7 @@ module Prover.G4sp where
 
 import           Bounding    (for)
 import           Formula     (Formula)
-import qualified MultiSet    as M
+import qualified Multiset    as M
 import qualified Prover.G4ip as I
 
 -- | Prove a superintuitionistic theorem

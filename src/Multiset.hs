@@ -1,11 +1,11 @@
-module MultiSet where
+module Multiset where
 
 import qualified Data.List as L
 import qualified Data.Set  as S
 import           Formula   (Formula (..))
 
 -- | A finite multiset of formulas
-data MultiSet = M {
+data Multiset = M {
   unV :: S.Set String, unF :: Bool, unT :: Bool,
   unC :: [(Formula, Formula)],
   unD :: [(Formula, Formula)],
@@ -13,44 +13,44 @@ data MultiSet = M {
 }
 
 -- | Empty multiset
-empty :: MultiSet
+empty :: Multiset
 empty = M S.empty False False [] [] []
 
 -- | Singleton multiset
-singleton :: Formula -> MultiSet
+singleton :: Formula -> Multiset
 singleton a = a +> empty
 
 -- | Check if a variable is in the multiset
-vmember :: Formula -> MultiSet -> Bool
+vmember :: Formula -> Multiset -> Bool
 vmember (V s) = S.member s . unV
 vmember _     = const False
 
 -- | Check if two multisets share a variable
-vshare :: MultiSet -> MultiSet -> Bool
+vshare :: Multiset -> Multiset -> Bool
 vshare x y = not $ null $ unV x `S.intersection` unV y
 
 -- | Get a conjunction from the multiset
-cget :: MultiSet -> Maybe (Formula, Formula, MultiSet)
+cget :: Multiset -> Maybe (Formula, Formula, Multiset)
 cget m = (\((a, b), cs) -> (a, b, m { unC = cs })) <$> L.uncons (unC m)
 
 -- | Get a disjunction from the multiset
-dget :: MultiSet -> Maybe (Formula, Formula, MultiSet)
+dget :: Multiset -> Maybe (Formula, Formula, Multiset)
 dget m = (\((a, b), ds) -> (a, b, m { unD = ds })) <$> L.uncons (unD m)
 
 -- | Get an implication from the multiset
-iget :: MultiSet -> Maybe (Formula, Formula, MultiSet)
+iget :: Multiset -> Maybe (Formula, Formula, Multiset)
 iget = ifind (const True)
 
 -- | Find an implication from the multiset that satisfies a predicate
-ifind :: ((Formula, Formula) -> Bool) -> MultiSet -> Maybe (Formula, Formula, MultiSet)
-ifind f m = (\x@(a, b) -> (a, b, idel x m)) <$> L.find f (unI m)
+ifind :: ((Formula, Formula) -> Bool) -> Multiset -> Maybe (Formula, Formula, Multiset)
+ifind p m = (\x@(a, b) -> (a, b, idel x m)) <$> L.find p (unI m)
 
 -- | Delete an implication from the multiset
-idel :: (Formula, Formula) -> MultiSet -> MultiSet
+idel :: (Formula, Formula) -> Multiset -> Multiset
 idel a m = m { unI = L.delete a $ unI m }
 
 -- | Insert a formula into the multiset
-insert :: Formula -> MultiSet -> MultiSet
+insert :: Formula -> Multiset -> Multiset
 insert (V s) m    = m { unV = S.insert s $ unV m }
 insert F m        = m { unF = True }
 insert T m        = m { unT = True }
@@ -59,6 +59,6 @@ insert (a :| b) m = m { unD = (a, b) : unD m }
 insert (a :> b) m = m { unI = (a, b) : unI m }
 
 -- | Infixed version of 'insert'
-(+>) :: Formula -> MultiSet -> MultiSet
+(+>) :: Formula -> Multiset -> Multiset
 (+>) = insert
 infixr 8 +>
