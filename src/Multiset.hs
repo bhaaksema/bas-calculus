@@ -16,6 +16,10 @@ data Multiset = M {
 empty :: Multiset
 empty = M S.empty False False [] [] []
 
+-- | Check if the multiset is empty
+null :: Multiset -> Bool
+null m = S.null (unV m) && not (unF m || unT m) && all L.null [unC m, unD m, unI m]
+
 -- | Singleton multiset
 singleton :: Formula -> Multiset
 singleton a = a +> empty
@@ -27,7 +31,7 @@ vmember _     = const False
 
 -- | Check if two multisets share a variable
 vshare :: Multiset -> Multiset -> Bool
-vshare x y = not $ null $ unV x `S.intersection` unV y
+vshare x y = not $ L.null $ unV x `S.intersection` unV y
 
 -- | Get a conjunction from the multiset
 cget :: Multiset -> Maybe (Formula, Formula, Multiset)

@@ -1,9 +1,9 @@
 module Main (main) where
 
-import           Formula     (Formula (..), iff, neg)
-import qualified Prover.G3cp as C
-import qualified Prover.G4ip as I
-import qualified Prover.G4sp as S
+import           Formula      (Formula (..), iff, neg)
+import qualified Prover.G3cp  as C
+import qualified Prover.G4ipm as I
+import qualified Prover.G4sp  as S
 
 a :: Formula; b :: Formula; c :: Formula
 (a, b, c) = (V "a", V "b", V "c")
