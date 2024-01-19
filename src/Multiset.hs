@@ -6,7 +6,8 @@ import           Formula   (Formula (..))
 
 -- | A finite multiset of formulas
 data Multiset = M {
-  unV :: S.Set String, unF :: Bool,
+  unV :: S.Set String,
+  unF :: Bool,
   unC :: [(Formula, Formula)],
   unD :: [(Formula, Formula)],
   unI :: [(Formula, Formula)]

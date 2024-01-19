@@ -3,10 +3,12 @@ module Formula where
 import qualified Data.Set as S
 
 -- | Propositional formula
-data Formula = V String | F
-  | Formula :& Formula
-  | Formula :| Formula
-  | Formula :> Formula
+data Formula
+  = V String -- ^ Propositional variable
+  | F -- ^ Bottom constant
+  | Formula :& Formula -- ^ Conjunction
+  | Formula :| Formula -- ^ Disjunction
+  | Formula :> Formula -- ^ Implication
   deriving (Eq, Ord)
 infix 8 :&
 infix 7 :|

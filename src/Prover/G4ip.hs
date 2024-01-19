@@ -34,14 +34,11 @@ prove1 (x, y)
   -- Left disjunction
   | Just (a, b, x1) <- M.dget x = prove1 (a +> x1, y) && (a == b || prove1 (b +> x1, y))
   -- Left implication (non-invertible)
-  | Just _ <- rget = False | Just _ <- lget = True
+  | Just _ <- M.ifind (\case e@(_ :> _, b) -> not (prove1 (b +> M.idel e x, y)); _ -> False) x = False
+  | Just _ <- M.ifind (\case e@(a@(_ :> d), b) -> prove1 (d :> b +> M.idel e x, a); _ -> False) x = True
   -- Right disjunction
   | a :| b <- y, prove1 (x, a) || (a /= b && prove1 (x, b)) = True
   -- Failed to prove
   | otherwise = False where
   -- Get the conclusion of an invertible implication rule instance
   iget = M.ifind (\case (V s, _) -> V s `M.vmember` x; (_ :> _, _) -> False; _ -> True) x
-  -- Get the conclusion of a left nested implication rule instance with provable left premise
-  lget = M.ifind (\case e@(a@(_ :> d), b) -> prove1 (d :> b +> M.idel e x, a); _ -> False) x
-  -- Get the conclusion of a left nested implication rule instance with unprovable right premise
-  rget = M.ifind (\case e@(_ :> _, b) -> not (prove1 (b +> M.idel e x, y)); _ -> False) x

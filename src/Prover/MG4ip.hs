@@ -37,8 +37,7 @@ prove1 (x, y)
   | Just (a, b, x1) <- M.dget x = prove1 (a +> x1, y) && (a == b || prove1 (b +> x1, y))
   -- Left implication (non-invertible)
   | Just _ <- M.ifind (\case
-    e@(a@(_ :> d), b) -> prove1 (d :> b +> M.idel e x, M.singleton a)
-    _ -> False) x = True
+    e@(a@(_ :> d), b) -> prove1 (d :> b +> M.idel e x, M.singleton a); _ -> False) x = True
   -- Right implication (non-invertible)
   | Just _ <- M.ifind (\case (a, b) -> prove1 (a +> x, M.singleton b)) y = True
   -- Failed to prove

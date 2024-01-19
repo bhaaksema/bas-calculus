@@ -11,7 +11,7 @@ type Sequent = (M.Multiset, M.Multiset)
 
 -- | Prove a superintuitionistic theorem (m-G4ip + A)
 sprove :: [Formula] -> Formula -> Bool
-sprove as f = iprove $ foldr1 (:&) (for as f) :> f
+sprove as f = iprove $ foldl1 (:&) (for as f) :> f
 
 -- | Prove a intuitionistic theorem (m-G4ip)
 iprove :: Formula -> Bool
@@ -21,7 +21,7 @@ iprove a = prove False (M.empty, M.singleton a)
 cprove :: Formula -> Bool
 cprove a = prove True (M.empty, M.singleton a)
 
--- | Check axioms and rules depending on the logic
+-- | Check the sequent is provable depending on the logic
 prove :: Bool -> Sequent -> Bool
 prove l (x, y)
   -- Initial sequent
