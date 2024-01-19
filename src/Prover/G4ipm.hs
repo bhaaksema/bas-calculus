@@ -19,13 +19,13 @@ prove1 (x, y)
   -- Initial sequent
   | M.vshare x y || M.unF x || M.unT y = True
   -- Glivenko's optimisation
-  | M.null y = C.prove1 (x, M.singleton F)
+  | y == M.singleton F = C.prove1 (x, M.singleton F)
   -- Left conjunction
   | Just (a, b, x1) <- M.cget x = prove1 (a +> b +> x1, y)
   -- Right disjunction
   | Just (a, b, y1) <- M.dget y = prove1 (x, a +> b +> y1)
   -- Right implication
-  | Just (a, b, y1) <- M.iget y, M.null y1 = prove1 (a +> x, b +> y1)
+  | Just (a, b, y1) <- M.iget y, y1 == M.empty = prove1 (a +> x, b +> y1)
   -- Left implication
   | Just (V _, b, x1) <- iget = prove1 (b +> x1, y)
   | Just (F, _, x1) <- iget = prove1 (x1, y)
@@ -33,9 +33,9 @@ prove1 (x, y)
   | Just (c :& d, b, x1) <- iget = prove1 (c :> (d :> b) +> x1, y)
   | Just (c :| d, b, x1) <- iget = prove1 (c :> b +> d :> b +> x1, y)
   -- Right conjunction
-  | Just (a, b, y1) <- M.cget y = prove1 (x, a +> y1) && prove1 (x, b +> y1)
+  | Just (a, b, y1) <- M.cget y = prove1 (x, a +> y1) && (a == b || prove1 (x, b +> y1))
   -- Left disjunction
-  | Just (a, b, x1) <- M.dget x = prove1 (a +> x1, y) && prove1 (b +> x1, y)
+  | Just (a, b, x1) <- M.dget x = prove1 (a +> x1, y) && (a == b || prove1 (b +> x1, y))
   -- Left implication (non-invertible)
   | Just _ <- M.ifind (\case
     e@(a@(_ :> d), b) -> prove1 (d :> b +> M.idel e x, M.singleton a)
@@ -43,7 +43,6 @@ prove1 (x, y)
   -- Right implication (non-invertible)
   | Just _ <- M.ifind (\case (a, b) -> prove1 (a +> x, M.singleton b)) y = True
   -- Failed to prove
-  | otherwise = False
-  where
+  | otherwise = False where
   -- Get the conclusion of an invertible implication rule instance
   iget = M.ifind (\case (V s, _) -> V s `M.vmember` x; (_ :> _, _) -> False; _ -> True) x

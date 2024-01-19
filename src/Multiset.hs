@@ -10,15 +10,11 @@ data Multiset = M {
   unC :: [(Formula, Formula)],
   unD :: [(Formula, Formula)],
   unI :: [(Formula, Formula)]
-}
+} deriving Eq
 
 -- | Empty multiset
 empty :: Multiset
 empty = M S.empty False False [] [] []
-
--- | Check if the multiset is empty
-null :: Multiset -> Bool
-null m = S.null (unV m) && not (unF m || unT m) && all L.null [unC m, unD m, unI m]
 
 -- | Singleton multiset
 singleton :: Formula -> Multiset
