@@ -7,11 +7,6 @@ import           Formula
 -- | Axiom is kind of a formula
 type Axiom = Formula
 
--- | Get all fusions of subformulas of a formula
-fusions :: Formula -> S.Set Formula
-fusions = S.map fuse . S.delete S.empty . S.powerSet . fors
-  where fuse = foldl1 (:&)
-
 -- | Substitution
 type Subst = M.Map String Formula
 
@@ -23,17 +18,16 @@ apply s (V str)  = s M.! str
 apply _ a        = a
 
 subst :: Axiom -> S.Set Formula -> [Subst]
-subst a fs = map M.fromList $ sequence [[(v, f1) | f1 <- S.toList fs] | v <- S.toList vs]
-  where vs = vars a
+subst a fs = map M.fromList $ sequence [[(v, f1) | f1 <- S.toList fs] | v <- S.toList (vars a)]
 
-instances :: (t -> S.Set Formula) -> [Axiom] -> t -> [Formula]
-instances f axi e = concat [map (`apply` a) (subst a (f e)) | a <- axi]
+instances :: (t -> S.Set Formula) -> [Axiom] -> t -> S.Set Formula
+instances f axi e = S.fromList $ concat [map (`apply` a) (subst a (f e)) | a <- axi]
 
-var :: [Axiom] -> Formula -> [Formula]
+var :: [Axiom] -> Formula -> S.Set Formula
 var = instances (S.map V . vars)
 
-for :: [Axiom] -> Formula -> [Formula]
+for :: [Axiom] -> Formula -> S.Set Formula
 for = instances fors
 
-set :: [Axiom] -> Formula -> [Formula]
-set = instances fusions
+set :: [Axiom] -> Formula -> S.Set Formula
+set = instances cons

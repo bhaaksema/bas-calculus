@@ -26,7 +26,7 @@ iff a b = (a :> b) :& (b :> a)
 top :: Formula
 top = neg F
 
--- | Get all unique variables of a formula
+-- | Set of variables of a formula
 vars :: Formula -> S.Set String
 vars (a :& b) = vars a `S.union` vars b
 vars (a :| b) = vars a `S.union` vars b
@@ -34,12 +34,16 @@ vars (a :> b) = vars a `S.union` vars b
 vars (V str)  = S.singleton str
 vars _        = S.empty
 
--- | Get all unique subformulas of a formula
+-- | Set of subformulas of a formula
 fors :: Formula -> S.Set Formula
 fors (a :& b) = S.insert (a :& b) $ fors a `S.union` fors b
 fors (a :| b) = S.insert (a :| b) $ fors a `S.union` fors b
 fors (a :> b) = S.insert (a :> b) $ fors a `S.union` fors b
 fors a        = S.singleton a
+
+-- | Set of conjunctions of subformulas of a formula
+cons :: Formula -> S.Set Formula
+cons = S.map (foldl1 (:&)) . S.delete S.empty . S.powerSet . fors
 
 -- | Show instance for Formula
 instance Show Formula where

@@ -9,7 +9,7 @@ import qualified Multiset as M
 -- | Multi succedent sequent
 type Sequent = (M.Multiset, M.Multiset)
 
--- | Prove a superintuitionistic theorem (m-G4ip + A)
+-- | Prove a superintuitionistic theorem (m-G4ip)
 sprove :: [Formula] -> Formula -> Bool
 sprove as f = iprove $ foldl1 (:&) (for as f) :> f
 
