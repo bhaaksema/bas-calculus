@@ -60,4 +60,4 @@ insert (a :> b) m = m { unI = (a, b) : unI m }
 -- | Infixed version of 'insert'
 (+>) :: Formula -> Multiset -> Multiset
 (+>) = insert
-infixr 0 +>
+infixr 5 +>

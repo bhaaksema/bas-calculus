@@ -9,15 +9,15 @@ import qualified Multiset as M
 -- | Multi succedent sequent
 type Sequent = (M.Multiset, M.Multiset)
 
--- | Prove a superintuitionistic theorem
+-- | Prove a superintuitionistic theorem (m-G4ip + A)
 sprove :: [Formula] -> Formula -> Bool
 sprove as f = iprove $ foldr1 (:&) (for as f) :> f
 
--- | Prove a intuitionistic theorem
+-- | Prove a intuitionistic theorem (m-G4ip)
 iprove :: Formula -> Bool
 iprove a = prove False (M.empty, M.singleton a)
 
--- | Prove a classical theorem
+-- | Prove a classical theorem (G3cp)
 cprove :: Formula -> Bool
 cprove a = prove True (M.empty, M.singleton a)
 

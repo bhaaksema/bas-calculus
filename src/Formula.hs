@@ -8,9 +8,9 @@ data Formula = V String | F
   | Formula :| Formula
   | Formula :> Formula
   deriving (Eq, Ord)
-infix 3 :&
-infix 2 :|
-infixr 1 :>
+infix 8 :&
+infix 7 :|
+infixr 6 :>
 
 -- | Negation of a formula
 neg :: Formula -> Formula
