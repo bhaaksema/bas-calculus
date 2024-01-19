@@ -15,7 +15,7 @@ prove a = prove1 (M.empty, M.singleton a)
 prove1 :: Sequent -> Bool
 prove1 (x, y)
   -- Initial sequent
-  | M.vshare x y || M.unF x || M.unT y = True
+  | M.vshare x y || M.unF x = True
   -- Left conjunction
   | Just (a, b, x1) <- M.cget x = prove1 (a +> b +> x1, y)
   -- Right disjunction

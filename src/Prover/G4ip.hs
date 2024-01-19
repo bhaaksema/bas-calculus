@@ -17,7 +17,7 @@ prove a = prove1 (M.empty, a)
 prove1 :: Sequent -> Bool
 prove1 (x, y)
   -- Initial sequent
-  | y `M.vmember` x || M.unF x || y == T = True
+  | y `M.vmember` x || M.unF x = True
   -- Glivenko's optimisation
   | F <- y = C.prove1 (x, M.singleton F)
   -- Right implication
@@ -27,7 +27,6 @@ prove1 (x, y)
   -- Left implication
   | Just (V _, b, x1) <- iget = prove1 (b +> x1, y)
   | Just (F, _, x1) <- iget = prove1 (x1, y)
-  | Just (T, b, x1) <- iget = prove1 (b +> x1, y)
   | Just (c :& d, b, x1) <- iget = prove1 (c :> (d :> b) +> x1, y)
   | Just (c :| d, b, x1) <- iget = prove1 (c :> b +> d :> b +> x1, y)
   -- Right conjunction

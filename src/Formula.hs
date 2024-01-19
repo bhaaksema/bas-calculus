@@ -3,11 +3,14 @@ module Formula where
 import qualified Data.Set as S
 
 -- | Propositional formula
-data Formula = V String | F | T
+data Formula = V String | F
   | Formula :& Formula
   | Formula :| Formula
   | Formula :> Formula
   deriving (Eq, Ord)
+infix 3 :&
+infix 2 :|
+infixr 1 :>
 
 -- | Negation of a formula
 neg :: Formula -> Formula
@@ -16,6 +19,10 @@ neg a = a :> F
 -- | Bi-implication of two formulas
 iff :: Formula -> Formula -> Formula
 iff a b = (a :> b) :& (b :> a)
+
+-- | Top constant
+top :: Formula
+top = neg F
 
 -- | Get all unique variables of a formula
 vars :: Formula -> S.Set String
@@ -34,12 +41,13 @@ fors a        = S.singleton a
 
 -- | Show instance for Formula
 instance Show Formula where
-  show = showBi where
-    showUn (V v) = v
-    showUn F     = "⊥"
-    showUn T     = "⊤"
-    showUn f     = "(" ++ show f ++ ")"
-    showBi (a :& b) = showUn a ++ " ∧ " ++ showUn b
-    showBi (a :| b) = showUn a ++ " ∨ " ++ showUn b
-    showBi (a :> b) = showUn a ++ " → " ++ showUn b
-    showBi f        = showUn f
+  show x
+    | a :& b <- x = showUn a ++ " ∧ " ++ showUn b
+    | a :| b <- x = showUn a ++ " ∨ " ++ showUn b
+    | a :> b <- x, b /= F = showUn a ++ " → " ++ showUn b
+    | otherwise = showUn x where
+    showUn (V str)  = str
+    showUn F        = "⊥"
+    showUn (F :> F) = "⊤"
+    showUn (a :> F) = '¬' : showUn a
+    showUn y        = '(' : show y ++ ")"

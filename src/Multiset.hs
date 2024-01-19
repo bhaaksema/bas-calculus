@@ -6,7 +6,7 @@ import           Formula   (Formula (..))
 
 -- | A finite multiset of formulas
 data Multiset = M {
-  unV :: S.Set String, unF :: Bool, unT :: Bool,
+  unV :: S.Set String, unF :: Bool,
   unC :: [(Formula, Formula)],
   unD :: [(Formula, Formula)],
   unI :: [(Formula, Formula)]
@@ -14,7 +14,7 @@ data Multiset = M {
 
 -- | Empty multiset
 empty :: Multiset
-empty = M S.empty False False [] [] []
+empty = M S.empty False [] [] []
 
 -- | Singleton multiset
 singleton :: Formula -> Multiset
@@ -53,7 +53,6 @@ idel a m = m { unI = L.delete a $ unI m }
 insert :: Formula -> Multiset -> Multiset
 insert (V s) m    = m { unV = S.insert s $ unV m }
 insert F m        = m { unF = True }
-insert T m        = m { unT = True }
 insert (a :& b) m = m { unC = (a, b) : unC m }
 insert (a :| b) m = m { unD = (a, b) : unD m }
 insert (a :> b) m = m { unI = (a, b) : unI m }
@@ -61,4 +60,4 @@ insert (a :> b) m = m { unI = (a, b) : unI m }
 -- | Infixed version of 'insert'
 (+>) :: Formula -> Multiset -> Multiset
 (+>) = insert
-infixr 8 +>
+infixr 0 +>

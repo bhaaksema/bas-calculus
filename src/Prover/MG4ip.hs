@@ -1,5 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
-module Prover.G4ipm where
+module Prover.MG4ip where
 
 import           Formula     (Formula (..))
 import           Multiset    ((+>))
@@ -17,9 +17,9 @@ prove a = prove1 (M.empty, M.singleton a)
 prove1 :: Sequent -> Bool
 prove1 (x, y)
   -- Initial sequent
-  | M.vshare x y || M.unF x || M.unT y = True
+  | M.vshare x y || M.unF x = True
   -- Glivenko's optimisation
-  | y == M.singleton F = C.prove1 (x, M.singleton F)
+  | y == M.singleton F = C.prove1 (x, y)
   -- Left conjunction
   | Just (a, b, x1) <- M.cget x = prove1 (a +> b +> x1, y)
   -- Right disjunction
@@ -29,7 +29,6 @@ prove1 (x, y)
   -- Left implication
   | Just (V _, b, x1) <- iget = prove1 (b +> x1, y)
   | Just (F, _, x1) <- iget = prove1 (x1, y)
-  | Just (T, b, x1) <- iget = prove1 (b +> x1, y)
   | Just (c :& d, b, x1) <- iget = prove1 (c :> (d :> b) +> x1, y)
   | Just (c :| d, b, x1) <- iget = prove1 (c :> b +> d :> b +> x1, y)
   -- Right conjunction
