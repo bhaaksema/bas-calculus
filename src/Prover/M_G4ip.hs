@@ -1,5 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
-module Prover.MG4ip where
+module Prover.M_G4ip where
 
 import           Formula     (Formula (..))
 import           Multiset    ((+>))
