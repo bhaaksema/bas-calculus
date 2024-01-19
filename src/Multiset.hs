@@ -28,7 +28,7 @@ vmember _     = const False
 
 -- | Check if two multisets share a variable
 vshare :: Multiset -> Multiset -> Bool
-vshare x y = not $ L.null $ unV x `S.intersection` unV y
+vshare x y = not $ S.null (unV x `S.intersection` unV y)
 
 -- | Get a conjunction from the multiset
 cget :: Multiset -> Maybe (Formula, Formula, Multiset)

@@ -36,8 +36,9 @@ prove1 (x, y)
   -- Left disjunction (Weich's optimisation)
   | Just (a, b, x1) <- M.dget x = prove1 (a +> x1, y) && (a == b || prove1 (b +> x1, a +> y))
   -- Left implication (non-invertible)
-  | Just _ <- M.ifind (\case
-    e@(a@(_ :> d), b) -> prove1 (d :> b +> M.idel e x, M.singleton a); _ -> False) x = True
+  | Just (_, b, x1) <- M.ifind (\case
+    e@(c :> d, b) -> prove1 (c +> d :> b +> M.idel e x, M.singleton d)
+    _ -> False) x = prove1 (b +> x1, y)
   -- Right implication (non-invertible)
   | Just _ <- M.ifind (\case (a, b) -> prove1 (a +> x, M.singleton b)) y = True
   -- Failed to prove
