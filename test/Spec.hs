@@ -28,9 +28,9 @@ itests =
   , (a :& b :> b, True)
   -- Łukasiewicz's axioms
   , ((a :> b :> c) :> (a :> b) :> a :> c, True)
-  , ((neg a :> neg b) `iff` (b :> a), False)
+  , (neg a :> neg b `iff` b :> a, False)
   , (neg (neg (a :| neg a)), True) -- Ono exercise 1.13
-  , (neg a:| neg b :> neg (a :& b), True) -- Ono example 1.8
+  , (neg a :| neg b :> neg (a :& b), True) -- Ono example 1.8
   ]
 
 check :: (Formula -> Bool) -> [(Formula, Bool)] -> [(Formula, Bool)]

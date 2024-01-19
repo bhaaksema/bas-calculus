@@ -21,6 +21,7 @@ neg a = a :> F
 -- | Bi-implication of two formulas
 iff :: Formula -> Formula -> Formula
 iff a b = (a :> b) :& (b :> a)
+infix 5 `iff`
 
 -- | Top constant
 top :: Formula
