@@ -24,8 +24,8 @@ prove1 (x, y)
   | Just (a, b, y1) <- M.iget y = prove1 (a +> x, b +> y1)
   -- Right conjunction
   | Just (a, b, y1) <- M.cget y = prove1 (x, a +> y1) && (a == b || prove1 (x, b +> y1))
-  -- Left disjunction
-  | Just (a, b, x1) <- M.dget x = prove1 (a +> x1, y) && (a == b || prove1 (b +> x1, y))
+  -- Left disjunction (Weich's optimisation)
+  | Just (a, b, x1) <- M.dget x = prove1 (a +> x1, y) && (a == b || prove1 (b +> x1, a +> y))
   -- Left implication
   | Just (a, b, x1) <- M.iget x = prove1 (x1, a +> y) && prove1 (b +> x1, y)
   -- Failed to prove
