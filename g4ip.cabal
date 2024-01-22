@@ -1,9 +1,9 @@
 cabal-version:      2.4
-name:               basc
+name:               g4ip
 version:            0.1.0.0
 synopsis:           Bounded-analytic sequent calculus
-homepage:           https://github.com/bhaaksema/basc-prover
-bug-reports:        https://github.com/bhaaksema/basc-prover/issues
+homepage:           https://github.com/bhaaksema/g4ip-haskell
+bug-reports:        https://github.com/bhaaksema/g4ip-haskell/issues
 license:            GPL-3.0-or-later
 license-file:       LICENSE
 author:             bhaaksema
@@ -22,16 +22,16 @@ library
     other-modules:    Bounding, Multiset
     hs-source-dirs:   src
 
-executable basc
+executable g4ip
     import:           shared-props
     main-is:          Main.hs
-    build-depends:    basc
+    build-depends:    g4ip
     hs-source-dirs:   app
     default-language: Haskell2010
 
-test-suite basc-test
+test-suite g4ip-test
     import:           shared-props
     type:             exitcode-stdio-1.0
     hs-source-dirs:   test
     main-is:          Spec.hs
-    build-depends:    basc
+    build-depends:    g4ip
