@@ -32,21 +32,27 @@ prove l (x, y)
   -- Left implication (classical)
   | l, Just (a, b, x1) <- M.iget x = prove l (x1, a +> y) && prove l (b +> x1, y)
   -- Left implication (intuitionistic invertible)
-  | Just (V _, b, x1) <- iget = prove l (b +> x1, y)
-  | Just (F, _, x1) <- iget = prove l (x1, y)
-  | Just (c :& d, b, x1) <- iget = prove l (c :> (d :> b) +> x1, y)
-  | Just (c :| d, b, x1) <- iget = prove l (c :> b +> d :> b +> x1, y)
+  | Just (V s, b, x1) <- M.iget x, V s `M.vmember` x1 = prove l (b +> x1, y)
+  | Just (F, _, x1) <- M.iget x = prove l (x1, y)
+  | Just (c :& d, b, x1) <- M.iget x = prove l (c :> (d :> b) +> x1, y)
+  | Just (c :| d, b, x1) <- M.iget x = prove l (c :> b +> d :> b +> x1, y)
   -- Right conjunction
-  | Just (a, b, y1) <- M.cget y = prove l (x, a +> y1) && (a == b || prove l (x, b +> y1))
+  | Just (a, b, y1) <- M.cget y = prove l (x, a +> y1) && prove l (x, b +> y1)
   -- Left disjunction (Weich's optimisation)
-  | Just (a, b, x1) <- M.dget x = prove l (a +> x1, y) && (a == b || prove l (b +> x1, a +> y))
+  | Just (a, b, x1) <- M.dget x = prove l (a +> x1, y) && prove l (b +> x1, a +> y)
+  -- Stash non-invertible candidates
+  | Just (a, b, x1) <- M.iget x = prove l (M.stashOne (a :> b) x1, y)
+  | Just (a, b, y1) <- M.iget y = prove l (x, M.stashOne (a :> b) y1)
+  -- Move on to non-invertible candidates
+  | otherwise = proveExv l (M.unstashAll x, M.unstashAll y)
+
+proveExv :: Bool -> Sequent -> Bool
+proveExv l (x, y)
   -- Left implication (intuitionistic non-invertible)
-  | Just (_, b, x1) <- M.ifind (\case
-    e@(c :> d, b) -> prove l (c +> d :> b +> M.idel e x, M.singleton d)
-    _ -> False) x = prove l (b +> x1, y)
+  | Just (c :> d, b, x1) <- M.iget x, prove l (c +> d :> b +> x1, M.singleton d) = prove l (b +> x1, y)
+  | Just (a, b, x1) <- M.iget x = proveExv l (M.stashOne (a :> b) x1, y)
   -- Right implication (intuitionistic non-invertible)
-  | Just _ <- M.ifind (\case(a, b) -> prove l (a +> x, M.singleton b)) y = True
+  | Just (a, b, _) <- M.iget y, prove l (a +> x, M.singleton b) = True
+  | Just (a, b, y1) <- M.iget y = proveExv l (x, M.stashOne (a :| b) y1)
   -- Failed to prove
-  | otherwise = False where
-  -- Get the conclusion of an invertible implication rule instance
-  iget = M.ifind (\case (V s, _) -> V s `M.vmember` x; (_ :> _, _) -> False; _ -> True) x
+  | otherwise = False

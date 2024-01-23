@@ -10,12 +10,13 @@ data Multiset = M {
   unF :: Bool,
   unC :: [(Formula, Formula)],
   unD :: [(Formula, Formula)],
-  unI :: [(Formula, Formula)]
+  unI :: [(Formula, Formula)],
+  unS :: [Formula]
 } deriving Eq
 
 -- | Empty multiset
 empty :: Multiset
-empty = M S.empty False [] [] []
+empty = M S.empty False [] [] [] []
 
 -- | Singleton multiset
 singleton :: Formula -> Multiset
@@ -40,15 +41,7 @@ dget m = (\((a, b), ds) -> (a, b, m { unD = ds })) <$> L.uncons (unD m)
 
 -- | Get an implication from the multiset
 iget :: Multiset -> Maybe (Formula, Formula, Multiset)
-iget = ifind (const True)
-
--- | Find an implication from the multiset that satisfies a predicate
-ifind :: ((Formula, Formula) -> Bool) -> Multiset -> Maybe (Formula, Formula, Multiset)
-ifind p m = (\x@(a, b) -> (a, b, idel x m)) <$> L.find p (unI m)
-
--- | Delete an implication from the multiset
-idel :: (Formula, Formula) -> Multiset -> Multiset
-idel a m = m { unI = L.delete a $ unI m }
+iget m = (\((a, b), ds) -> (a, b, m { unI = ds })) <$> L.uncons (unI m)
 
 -- | Insert a formula into the multiset
 insert :: Formula -> Multiset -> Multiset
@@ -57,6 +50,12 @@ insert F m        = m { unF = True }
 insert (a :& b) m = m { unC = (a, b) : unC m }
 insert (a :| b) m = m { unD = (a, b) : unD m }
 insert (a :> b) m = m { unI = (a, b) : unI m }
+
+stashOne :: Formula -> Multiset -> Multiset
+stashOne a m = m { unS = a : unS m }
+
+unstashAll :: Multiset -> Multiset
+unstashAll m = foldr insert m { unS = [] } $ unS m
 
 -- | Infixed version of 'insert'
 (+>) :: Formula -> Multiset -> Multiset
