@@ -1,17 +1,12 @@
 {-# LANGUAGE LambdaCase #-}
-module Prover (sprove, iprove, cprove) where
+module Prover (iprove, cprove) where
 
-import qualified Bounding as B
 import           Formula  (Formula (..))
 import           Multiset ((+>))
 import qualified Multiset as M
 
 -- | Multi succedent sequent
 type Sequent = (M.Multiset, M.Multiset)
-
--- | Prove a superintuitionistic theorem (m-G4ip)
-sprove :: [B.Axiom] -> Formula -> Bool
-sprove as f = iprove $ foldl1 (:&) (B.for as f) :> f
 
 -- | Prove a intuitionistic theorem (m-G4ip)
 iprove :: Formula -> Bool

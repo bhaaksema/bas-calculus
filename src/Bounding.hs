@@ -1,39 +1,49 @@
-module Bounding (Axiom, var, for, set) where
+module Bounding (Axiom, embed) where
 
 import qualified Data.Map as M
 import qualified Data.Set as S
 import           Formula
+import qualified Prover   as P
+
+-- | Set of variables of a formula
+vars :: Formula -> S.Set Formula
+vars (a :& b) = vars a `S.union` vars b
+vars (a :| b) = vars a `S.union` vars b
+vars (a :> b) = vars a `S.union` vars b
+vars (V str)  = S.singleton (V str)
+vars _        = S.empty
+
+-- | Set of subformulas of a formula
+fors :: Formula -> S.Set Formula
+fors (a :& b) = S.insert (a :& b) $ fors a `S.union` fors b
+fors (a :| b) = S.insert (a :| b) $ fors a `S.union` fors b
+fors (a :> b) = S.insert (a :> b) $ fors a `S.union` fors b
+fors a        = S.singleton a
+
+-- | Set of conjunctions of subformulas of a formula
+cons :: Formula -> S.Set Formula
+cons = S.map (foldl1 (:&)) . S.delete S.empty . S.powerSet . fors
 
 -- | Axiom is kind of a formula
 type Axiom = Formula
 
--- | Substitution from variables to formulas
-type Subst = M.Map String Formula
-
 -- | Substitute all variables in a formula
-apply :: Subst -> Formula -> Formula
-apply s (a :& b) = apply s a :& apply s b
-apply s (a :| b) = apply s a :| apply s b
-apply s (a :> b) = apply s a :> apply s b
-apply s (V str)  = s M.! str
-apply _ a        = a
+vmap :: (String -> Formula) -> Formula -> Formula
+vmap f (a :& b) = vmap f a :& vmap f b
+vmap f (a :| b) = vmap f a :| vmap f b
+vmap f (a :> b) = vmap f a :> vmap f b
+vmap f (V str)  = f str
+vmap _ a        = a
 
--- | All possible substitutions of an axiom
-subst :: Axiom -> S.Set Formula -> [Subst]
-subst a fs = map M.fromList $ sequence [[(v, f1) | f1 <- S.toList fs] | v <- S.toList (vars a)]
+-- | Generalized bounding function
+bfunc :: (Formula -> S.Set Formula) -> [Axiom] -> Formula -> S.Set Formula
+bfunc f axi a = S.fromList [vmap (M.fromDistinctAscList m M.!) ax | ax <- axi, m <- maps ax]
+ where maps ax = sequence [[(str, b) | b <- S.toList (f a)] | V str <- S.toList (vars ax)]
 
--- | All possible instantiations of an axiom
-insts :: (t -> S.Set Formula) -> [Axiom] -> t -> S.Set Formula
-insts f axi e = S.fromList $ concat [map (`apply` a) (subst a (f e)) | a <- axi]
+-- | Embed an intermediate logic into intuitionistic logic
+embed :: [Axiom] -> Formula -> Formula
+embed axi a = foldl1 (:&) (bfunc cons axi a) :> a
 
--- | Variable-bounding function
-var :: [Axiom] -> Formula -> S.Set Formula
-var = insts (S.map V . vars)
-
--- | Formula-bounding function
-for :: [Axiom] -> Formula -> S.Set Formula
-for = insts fors
-
--- | Set-bounding function
-set :: [Axiom] -> Formula -> S.Set Formula
-set = insts cons
+-- | Prove a superintuitionistic theorem
+sprove :: [Axiom] -> Formula -> Bool
+sprove ax = P.iprove . embed ax

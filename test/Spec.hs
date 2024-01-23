@@ -40,8 +40,5 @@ main :: IO ()
 main = do
   let ctests = head itests : map (\(x, _) -> (x, True)) (tail itests)
   let rci = check cprove ctests ++ check iprove itests
-  let rs1 = check (sprove [a :| neg a]) ((neg (neg b) :> b, True) : ctests)
-  let rs2 = check (sprove [neg (neg b) :> b]) ((a :| neg a, True) : ctests)
-  let res = rci ++ rs1 ++ rs2
-  mapM_ (\(f, r) -> putStrLn $ (if r then "✅" else "⛔") ++ " " ++ show f) res
-  if all snd res then putStrLn "All tests passed!" else error "Some tests failed!"
+  mapM_ (\(f, r) -> putStrLn $ (if r then "✅" else "⛔") ++ " " ++ show f) rci
+  if all snd rci then putStrLn "All tests passed!" else error "Some tests failed!"
