@@ -19,15 +19,8 @@ common shared-props
 library
     import:           shared-props
     exposed-modules:  Formula, Prover
-    other-modules:    Bounding, Multiset
+    other-modules:    Multiset
     hs-source-dirs:   src
-
-executable g4ip
-    import:           shared-props
-    main-is:          Main.hs
-    build-depends:    g4ip
-    hs-source-dirs:   app
-    default-language: Haskell2010
 
 test-suite g4ip-test
     import:           shared-props

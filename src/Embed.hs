@@ -1,4 +1,4 @@
-module Bounding (Axiom, embed) where
+module Embed (sprove) where
 
 import qualified Data.Map as M
 import qualified Data.Set as S
