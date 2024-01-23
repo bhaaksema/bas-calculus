@@ -23,9 +23,8 @@ singleton :: Formula -> Multiset
 singleton a = a +> empty
 
 -- | Check if a variable is in the multiset
-vmember :: Formula -> Multiset -> Bool
-vmember (V s) = S.member s . unV
-vmember _     = const False
+vmember :: String -> Multiset -> Bool
+vmember s = S.member s . unV
 
 -- | Check if two multisets share a variable
 vshare :: Multiset -> Multiset -> Bool
@@ -51,11 +50,13 @@ insert (a :& b) m = m { unC = (a, b) : unC m }
 insert (a :| b) m = m { unD = (a, b) : unD m }
 insert (a :> b) m = m { unI = (a, b) : unI m }
 
-stashOne :: Formula -> Multiset -> Multiset
-stashOne a m = m { unS = a : unS m }
+-- | Insert a formula into the multiset stash
+toStash :: Formula -> Multiset -> Multiset
+toStash a m = m { unS = a : unS m }
 
-unstashAll :: Multiset -> Multiset
-unstashAll m = foldr insert m { unS = [] } $ unS m
+-- | Put the stashed formulas back into the multiset
+unStash :: Multiset -> Multiset
+unStash m = foldr insert m { unS = [] } $ unS m
 
 -- | Infixed version of 'insert'
 (+>) :: Formula -> Multiset -> Multiset

@@ -32,7 +32,7 @@ prove l (x, y)
   -- Left implication (classical)
   | l, Just (a, b, x1) <- M.iget x = prove l (x1, a +> y) && prove l (b +> x1, y)
   -- Left implication (intuitionistic invertible)
-  | Just (V s, b, x1) <- M.iget x, V s `M.vmember` x1 = prove l (b +> x1, y)
+  | Just (V s, b, x1) <- M.iget x, s `M.vmember` x1 = prove l (b +> x1, y)
   | Just (F, _, x1) <- M.iget x = prove l (x1, y)
   | Just (c :& d, b, x1) <- M.iget x = prove l (c :> (d :> b) +> x1, y)
   | Just (c :| d, b, x1) <- M.iget x = prove l (c :> b +> d :> b +> x1, y)
@@ -41,18 +41,22 @@ prove l (x, y)
   -- Left disjunction (Weich's optimisation)
   | Just (a, b, x1) <- M.dget x = prove l (a +> x1, y) && prove l (b +> x1, a +> y)
   -- Stash non-invertible candidates
-  | Just (a, b, x1) <- M.iget x = prove l (M.stashOne (a :> b) x1, y)
-  | Just (a, b, y1) <- M.iget y = prove l (x, M.stashOne (a :> b) y1)
+  | Just (a, b, x1) <- M.iget x = prove l (M.toStash (a :> b) x1, y)
+  | Just (a, b, y1) <- M.iget y = prove l (x, M.toStash (a :> b) y1)
   -- Move on to non-invertible candidates
-  | otherwise = proveExv l (M.unstashAll x, M.unstashAll y)
+  | otherwise = proveExv (M.unStash x, M.unStash y)
 
-proveExv :: Bool -> Sequent -> Bool
-proveExv l (x, y)
-  -- Left implication (intuitionistic non-invertible)
+-- | Check the sequent is provable with non-invertible rules
+proveExv :: Sequent -> Bool
+proveExv (x, y)
+  -- Left implication
   | Just (c :> d, b, x1) <- M.iget x, prove l (c +> d :> b +> x1, M.singleton d) = prove l (b +> x1, y)
-  | Just (a, b, x1) <- M.iget x = proveExv l (M.stashOne (a :> b) x1, y)
-  -- Right implication (intuitionistic non-invertible)
+  -- Right implication
   | Just (a, b, _) <- M.iget y, prove l (a +> x, M.singleton b) = True
-  | Just (a, b, y1) <- M.iget y = proveExv l (x, M.stashOne (a :| b) y1)
+  -- Stash failed candidates
+  | Just (a, b, x1) <- M.iget x = proveExv (M.toStash (a :> b) x1, y)
+  | Just (a, b, y1) <- M.iget y = proveExv (x, M.toStash (a :| b) y1)
   -- Failed to prove
   | otherwise = False
+  -- Non-invertible rules belong to m-G4ip
+  where l = False
