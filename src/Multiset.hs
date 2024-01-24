@@ -5,60 +5,50 @@ import qualified Data.Set  as S
 import           Formula   (Formula (..))
 
 -- | A finite multiset of formulas
-data Multiset = M {
-  unV :: S.Set String,
-  unF :: Bool,
-  unC :: [(Formula, Formula)],
-  unD :: [(Formula, Formula)],
-  unI :: [(Formula, Formula)],
-  unS :: [Formula]
+data Multiset = Multiset {
+  var  :: S.Set String,
+  bot  :: Bool,
+  top  :: Bool,
+  bin1 :: [Formula],
+  bin2 :: [Formula]
 } deriving Eq
 
 -- | Empty multiset
 empty :: Multiset
-empty = M S.empty False [] [] [] []
+empty = Multiset S.empty False False [] []
 
 -- | Singleton multiset
 singleton :: Formula -> Multiset
-singleton a = a +> empty
-
--- | Check if a variable is in the multiset
-vmember :: String -> Multiset -> Bool
-vmember s = S.member s . unV
-
--- | Check if two multisets share a variable
-vshare :: Multiset -> Multiset -> Bool
-vshare x y = not $ S.null (unV x `S.intersection` unV y)
-
--- | Get a conjunction from the multiset
-cget :: Multiset -> Maybe (Formula, Formula, Multiset)
-cget m = (\((a, b), cs) -> (a, b, m { unC = cs })) <$> L.uncons (unC m)
-
--- | Get a disjunction from the multiset
-dget :: Multiset -> Maybe (Formula, Formula, Multiset)
-dget m = (\((a, b), ds) -> (a, b, m { unD = ds })) <$> L.uncons (unD m)
-
--- | Get an implication from the multiset
-iget :: Multiset -> Maybe (Formula, Formula, Multiset)
-iget m = (\((a, b), ds) -> (a, b, m { unI = ds })) <$> L.uncons (unI m)
+singleton a = insert a empty
 
 -- | Insert a formula into the multiset
 insert :: Formula -> Multiset -> Multiset
-insert (V s) m    = m { unV = S.insert s $ unV m }
-insert F m        = m { unF = True }
-insert (a :& b) m = m { unC = (a, b) : unC m }
-insert (a :| b) m = m { unD = (a, b) : unD m }
-insert (a :> b) m = m { unI = (a, b) : unI m }
-
--- | Insert a formula into the multiset stash
-toStash :: Formula -> Multiset -> Multiset
-toStash a m = m { unS = a : unS m }
-
--- | Put the stashed formulas back into the multiset
-unStash :: Multiset -> Multiset
-unStash m = foldr insert m { unS = [] } $ unS m
+insert (Var s) m = m { var = S.insert s $ var m }
+insert Bot m     = m { bot = True }
+insert Top m     = m { top = True }
+insert a m       = m { bin1 = a : bin1 m }
 
 -- | Infixed version of 'insert'
 (+>) :: Formula -> Multiset -> Multiset
 (+>) = insert
 infixr 5 +>
+
+-- | Check if an atomic variable is in the multiset
+vmember :: String -> Multiset -> Bool
+vmember s = S.member s . var
+
+-- | Check if two multisets share an atomic variable
+vshare :: Multiset -> Multiset -> Bool
+vshare x y = not $ S.null (var x `S.intersection` var y)
+
+-- | Pop formula at stack pointer position
+bpop :: Multiset -> Maybe (Formula, Multiset)
+bpop m = (\(a, as) -> (a, m { bin1 = as })) <$> L.uncons (bin1 m)
+
+-- | Move the stack pointer down by one
+bdown :: Multiset -> Multiset
+bdown m = m { bin1 = tail (bin1 m), bin2 = head (bin1 m) : bin2 m }
+
+-- | Move the stack pointer completely up
+bceil :: Multiset -> Multiset
+bceil m = m { bin1 = bin2 m ++ bin1 m, bin2 = [] }

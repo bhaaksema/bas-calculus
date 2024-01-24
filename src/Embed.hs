@@ -10,7 +10,7 @@ vars :: Formula -> S.Set Formula
 vars (a :& b) = vars a `S.union` vars b
 vars (a :| b) = vars a `S.union` vars b
 vars (a :> b) = vars a `S.union` vars b
-vars (V str)  = S.singleton (V str)
+vars (Var s)  = S.singleton (Var s)
 vars _        = S.empty
 
 -- | Set of subformulas of a formula
@@ -32,13 +32,13 @@ vmap :: (String -> Formula) -> Formula -> Formula
 vmap f (a :& b) = vmap f a :& vmap f b
 vmap f (a :| b) = vmap f a :| vmap f b
 vmap f (a :> b) = vmap f a :> vmap f b
-vmap f (V str)  = f str
+vmap f (Var s)  = f s
 vmap _ a        = a
 
 -- | Generalized bounding function
 bfunc :: (Formula -> S.Set Formula) -> [Axiom] -> Formula -> S.Set Formula
 bfunc f axi a = S.fromList [vmap (M.fromDistinctAscList m M.!) ax | ax <- axi, m <- maps ax]
- where maps ax = sequence [[(str, b) | b <- S.toList (f a)] | V str <- S.toList (vars ax)]
+ where maps ax = sequence [[(s, b) | b <- S.toList (f a)] | Var s <- S.toList (vars ax)]
 
 -- | Embed an intermediate logic into intuitionistic logic
 embed :: [Axiom] -> Formula -> Formula
