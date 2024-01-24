@@ -1,0 +1,30 @@
+cabal-version:   2.4
+name:            hseq
+version:         0.3.0.0
+synopsis:        Haskell Sequent Calculus Theorem Prover
+homepage:        https://github.com/bhaaksema/hseq-prover
+bug-reports:     https://github.com/bhaaksema/hseq-prover/issues
+license:         GPL-3.0-or-later
+license-file:    LICENSE
+author:          bhaaksema
+maintainer:      17254355+bhaaksema@users.noreply.github.com
+category:        Logic
+extra-doc-files: README.md
+
+common shared-props
+    ghc-options:      -Wall
+    build-depends:    base ^>=4.17.2.1, containers ^>=0.6.7
+    default-language: Haskell2010
+
+library
+    import:           shared-props
+    exposed-modules:  Formula, Prover
+    other-modules:    Multiset
+    hs-source-dirs:   src
+
+test-suite hseq-test
+    import:           shared-props
+    type:             exitcode-stdio-1.0
+    hs-source-dirs:   test
+    main-is:          Spec.hs
+    build-depends:    hseq
