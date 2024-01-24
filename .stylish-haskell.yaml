@@ -18,7 +18,7 @@ steps:
       space_surround: false
       post_qualify: false
   - language_pragmas:
-      style: vertical
+      style: compact
       align: true
       remove_redundant: true
       language_prefix: LANGUAGE

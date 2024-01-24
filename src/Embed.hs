@@ -42,7 +42,8 @@ bfunc f axi a = S.fromList [vmap (M.fromDistinctAscList m M.!) ax | ax <- axi, m
 
 -- | Embed an intermediate logic into intuitionistic logic
 embed :: [Axiom] -> Formula -> Formula
-embed axi a = foldl1 (:&) (bfunc cons axi a) :> a
+embed axi a = foldl (:&) Top (bfunc fors axi a) :> a
+-- ^ Prover is not fast enough to use cons instead of fors
 
 -- | Prove a superintuitionistic theorem
 sprove :: [Axiom] -> Formula -> Bool

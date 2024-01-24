@@ -1,6 +1,6 @@
 cabal-version:   2.4
 name:            hseq
-version:         0.3.0.0
+version:         0.2.0.0
 synopsis:        Haskell Sequent Calculus Theorem Prover
 homepage:        https://github.com/bhaaksema/hseq-prover
 bug-reports:     https://github.com/bhaaksema/hseq-prover/issues
@@ -18,8 +18,8 @@ common shared-props
 
 library
     import:           shared-props
-    exposed-modules:  Formula, Prover
-    other-modules:    Multiset, Embed
+    exposed-modules:  Formula, Prover, Embed
+    other-modules:    Multiset
     hs-source-dirs:   src
 
 test-suite hseq-test

@@ -6,16 +6,17 @@ import           Formula   (Formula (..))
 
 -- | A finite multiset of formulas
 data Multiset = Multiset {
-  var  :: S.Set String,
-  bot  :: Bool,
-  top  :: Bool,
-  bin1 :: [Formula],
-  bin2 :: [Formula]
+  var :: S.Set String,
+  bot :: Bool,
+  top :: Bool,
+  con :: [(Formula, Formula)],
+  dis :: [(Formula, Formula)],
+  imp :: [(Formula, Formula)]
 } deriving Eq
 
 -- | Empty multiset
 empty :: Multiset
-empty = Multiset S.empty False False [] []
+empty = Multiset S.empty False False [] [] []
 
 -- | Singleton multiset
 singleton :: Formula -> Multiset
@@ -23,10 +24,12 @@ singleton a = insert a empty
 
 -- | Insert a formula into the multiset
 insert :: Formula -> Multiset -> Multiset
-insert (Var s) m = m { var = S.insert s $ var m }
-insert Bot m     = m { bot = True }
-insert Top m     = m { top = True }
-insert a m       = m { bin1 = a : bin1 m }
+insert (Var s) m  = m { var = S.insert s $ var m }
+insert Bot m      = m { bot = True }
+insert Top m      = m { top = True }
+insert (a :& b) m = m { con = (a, b) : con m }
+insert (a :| b) m = m { dis = (a, b) : dis m }
+insert (a :> b) m = m { imp = (a, b) : imp m }
 
 -- | Infixed version of 'insert'
 (+>) :: Formula -> Multiset -> Multiset
@@ -41,14 +44,22 @@ vmember s = S.member s . var
 vshare :: Multiset -> Multiset -> Bool
 vshare x y = not $ S.null (var x `S.intersection` var y)
 
--- | Pop formula at stack pointer position
-bpop :: Multiset -> Maybe (Formula, Multiset)
-bpop m = (\(a, as) -> (a, m { bin1 = as })) <$> L.uncons (bin1 m)
+-- | Get a conjunction from the multiset
+cget :: Multiset -> Maybe (Formula, Formula, Multiset)
+cget m = (\((a, b), cs) -> (a, b, m { con = cs })) <$> L.uncons (con m)
 
--- | Move the stack pointer down by one
-bdown :: Multiset -> Multiset
-bdown m = m { bin1 = tail (bin1 m), bin2 = head (bin1 m) : bin2 m }
+-- | Get a disjunction from the multiset
+dget :: Multiset -> Maybe (Formula, Formula, Multiset)
+dget m = (\((a, b), ds) -> (a, b, m { dis = ds })) <$> L.uncons (dis m)
 
--- | Move the stack pointer completely up
-bceil :: Multiset -> Multiset
-bceil m = m { bin1 = bin2 m ++ bin1 m, bin2 = [] }
+-- | Get an implication from the multiset
+iget :: Multiset -> Maybe (Formula, Formula, Multiset)
+iget = ifind (const True)
+
+-- | Find an implication from the multiset that satisfies a predicate
+ifind :: ((Formula, Formula) -> Bool) -> Multiset -> Maybe (Formula, Formula, Multiset)
+ifind p m = (\x@(a, b) -> (a, b, idel x m)) <$> L.find p (imp m)
+
+-- | Delete an implication from the multiset
+idel :: (Formula, Formula) -> Multiset -> Multiset
+idel a m = m { imp = L.delete a $ imp m }

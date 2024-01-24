@@ -1,20 +1,21 @@
 module Main (main) where
 
+import Embed
 import Formula
 import Prover
 
 a :: Formula; b :: Formula; c :: Formula
-(a, b, c) = (V "a", V "b", V "c")
+(a, b, c) = (Var "a", Var "b", Var "c")
 
 itests :: [(Formula, Bool)]
 itests =
-  [ (F, False)
-  , (top, True)
+  [ (Bot, False)
+  , (Top, True)
   , (a :> a, True)
   , (a :> b :> a, True) -- left-weakening axiom
   , ((a :> a :> b) :> a :> b, True) -- contraction axiom
   , ((a :> b :> c) :> b :> a :> c, True) -- exchange axiom
-  , (F :> a, True)
+  , (Bot :> a, True)
   , ((a :> b) :> (c :> a) :> c :> b, True)
   , (neg (neg a) :> a, False) -- law of double negation
   , (neg a :| a, False) -- law of excluded middle
@@ -40,5 +41,8 @@ main :: IO ()
 main = do
   let ctests = head itests : map (\(x, _) -> (x, True)) (tail itests)
   let rci = check cprove ctests ++ check iprove itests
-  mapM_ (\(f, r) -> putStrLn $ (if r then "✅" else "⛔") ++ " " ++ show f) rci
-  if all snd rci then putStrLn "All tests passed!" else error "Some tests failed!"
+  let rs1 = check (sprove [neg a :| a]) ((neg (neg b) :> b, True) : ctests)
+  let rs2 = check (sprove [neg (neg b) :> b]) ((a :| neg a, True) : ctests)
+  let res = rci ++ rs1 ++ rs2
+  mapM_ (\(f, r) -> putStrLn $ (if r then "✅" else "⛔") ++ " " ++ show f) res
+  if all snd res then putStrLn "All tests passed!" else error "Some tests failed!"
