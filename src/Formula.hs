@@ -1,5 +1,7 @@
 module Formula where
 
+import qualified Data.Map as M
+
 -- | Propositional formula
 data Formula
   = Var String | Bot | Top
@@ -22,32 +24,37 @@ infix 5 `iff`
 
 -- | Simplify a formula
 simplify :: Formula -> Formula
-simplify (a :& b)
-  | p == q || q == Top = p
-  | p == Top = q
-  | p == Bot || q == Bot = Bot
-  | otherwise = p :& q
-  where p = simplify a; q = simplify b
-simplify (a :| b)
-  | p == q || q == Bot = p
-  | p == Bot = q
-  | p == Top || q == Top = Top
-  | otherwise = p :| q
-  where p = simplify a; q = simplify b
-simplify (a :> b)
-  | p == q || q == Top || p == Bot = Top
-  | p == Top = q
-  | otherwise = p :> q
-  where p = simplify a; q = simplify b
-simplify p = p
+simplify = alter M.empty
+
+-- | Alter and reduce a formula
+alter :: M.Map String Formula -> Formula -> Formula
+alter f (a :& b)
+  | c == d || d == Top = c
+  | c == Top = d
+  | c == Bot || d == Bot = Bot
+  | otherwise = c :& d
+  where c = alter f a; d = alter f b
+alter f (a :| b)
+  | c == d || d == Bot = c
+  | c == Bot = d
+  | c == Top || d == Top = Top
+  | otherwise = c :| d
+  where c = alter f a; d = alter f b
+alter f (a :> b)
+  | c == d || d == Top || c == Bot = Top
+  | c == Top = d
+  | otherwise = c :> d
+  where c = alter f a; d = alter f b
+alter f (Var s) | Just a <- f M.!? s = simplify a
+alter _ a = a
 
 -- | Show instance for Formula
 instance Show Formula where
-  show x
-    | a :& b <- x = showUn a ++ " ∧ " ++ showUn b
-    | a :| b <- x = showUn a ++ " ∨ " ++ showUn b
-    | a :> b <- x, b /= Bot = showUn a ++ " → " ++ showUn b
-    | otherwise = showUn x where
+  show c
+    | a :& b <- c = showUn a ++ " ∧ " ++ showUn b
+    | a :| b <- c = showUn a ++ " ∨ " ++ showUn b
+    | a :> b <- c, b /= Bot = showUn a ++ " → " ++ showUn b
+    | otherwise = showUn c where
     showUn (Var s)    = s
     showUn Bot        = "⊥"
     showUn Top        = "⊤"

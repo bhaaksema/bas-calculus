@@ -1,6 +1,7 @@
 module Main (main) where
 
-import Embed
+import Control.Monad (unless)
+
 import Formula
 import Prover
 
@@ -44,5 +45,6 @@ main = do
   let rs1 = check (sprove [neg a :| a]) ((neg (neg b) :> b, True) : ctests)
   let rs2 = check (sprove [neg (neg b) :> b]) ((a :| neg a, True) : ctests)
   let res = rci ++ rs1 ++ rs2
-  mapM_ (\(f, r) -> putStrLn $ (if r then "✅" else "⛔") ++ " " ++ show f) res
-  if all snd res then putStrLn "All tests passed!" else error "Some tests failed!"
+  let resi = zipWith (\(f, r) i -> (show i ++ ' ' : show f, r)) res [(1 :: Int)..]
+  mapM_ (\(f, r) -> do putStr f; putStrLn (if r then " ✅" else " ⛔")) resi
+  unless (all snd res) undefined

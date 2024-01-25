@@ -1,9 +1,9 @@
-module Embed (sprove) where
+module Embed (Axiom, embed) where
 
 import qualified Data.Map as M
 import qualified Data.Set as S
-import           Formula
-import qualified Prover   as P
+
+import Formula
 
 -- | Set of variables of a formula
 vars :: Formula -> S.Set Formula
@@ -42,9 +42,4 @@ bfunc f axi a = S.fromList [vmap (M.fromDistinctAscList m M.!) ax | ax <- axi, m
 
 -- | Embed an intermediate logic into intuitionistic logic
 embed :: [Axiom] -> Formula -> Formula
-embed axi a = foldl (:&) Top (bfunc fors axi a) :> a
--- ^ Prover is not fast enough to use cons instead of fors
-
--- | Prove a superintuitionistic theorem
-sprove :: [Axiom] -> Formula -> Bool
-sprove ax = P.iprove . embed ax
+embed axi a = foldl (:&) Top (bfunc cons axi a) :> a
