@@ -28,23 +28,25 @@ simplify = subst M.empty
 
 -- | Substitute and reduce a formula
 subst :: M.Map String Formula -> Formula -> Formula
-subst f (a :& b)
-  | c == d || d == Top = c
-  | c == Top = d
-  | c == Bot || d == Bot = Bot
-  | otherwise = c :& d
-  where c = subst f a; d = subst f b
-subst f (a :| b)
-  | c == d || d == Bot = c
-  | c == Bot = d
-  | c == Top || d == Top = Top
-  | otherwise = c :| d
-  where c = subst f a; d = subst f b
-subst f (a :> b)
-  | c == d || d == Top || c == Bot = Top
-  | c == Top = d
-  | otherwise = c :> d
-  where c = subst f a; d = subst f b
+subst f (a1 :& b1)
+  | a == b || b == Top = a
+  | a == Top = b
+  | a == Bot || b == Bot = Bot
+  | otherwise = a :& b
+  where a = subst f a1; b = subst f b1
+subst f (a1 :| b1)
+  | a == b || b == Bot = a
+  | a == Bot = b
+  | a == Top || b == Top = Top
+  | otherwise = a :| b
+  where a = subst f a1; b = subst f b1
+subst f (a1 :> b1)
+  | a == b || b == Top || a == Bot = Top
+  | a == Top = b
+  | c :& d <- a = c :> (d :> b)
+  | c :| d <- a = (c :> b) :& (d :> b)
+  | otherwise = a :> b
+  where a = subst f a1; b = subst f b1
 subst f (Var s) | Just a <- f M.!? s = simplify a
 subst _ a = a
 
