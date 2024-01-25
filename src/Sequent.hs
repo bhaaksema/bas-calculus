@@ -18,12 +18,12 @@ singletonRight a = Sequent M.empty empty (singleton $ simplify a)
 
 -- | Insert a formula into the antecedent
 (+<) :: Formula -> Sequent -> Sequent
-a +< s = reset $ case a of
+a +< s = case a of
   Var str        -> apply str Top
   Var str :> Bot -> apply str Bot
   _              -> s {left = insert (subst (smap s) a) (left s)}
   where
-    apply str atom = let
+    apply str atom = let -- side effect, resets stack pointers
       s1 = Sequent (M.insert str atom (smap s)) (singleton atom) empty
       s2 = foldr ((+<) . subst (smap s1)) s1 (toList (left s))
       in foldr ((+>) . subst (smap s2)) s2 (toList (right s))
@@ -31,7 +31,7 @@ infixr 5 +<
 
 -- | Insert a formula into the succedent
 (+>) :: Formula -> Sequent -> Sequent
-a +> s = reset s {right = insert (subst (smap s) a) (right s)}
+a +> s = s {right = insert (subst (smap s) a) (right s)}
 infixr 5 +>
 
 -- | Take the first formula from the antecedent
