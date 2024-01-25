@@ -1,12 +1,12 @@
-{-# LANGUAGE LambdaCase #-}
 module Prover (sprove, iprove, cprove) where
 
 import qualified Multiset as M
-import qualified Sequent  as S
 
 import Embed   (Axiom, embed)
 import Formula (Formula (..))
-import Sequent ((+<), (+>))
+import Sequent as S
+
+data Logic = Int | Cl deriving Eq
 
 -- | Prove a superintuitionistic theorem
 sprove :: [Axiom] -> Formula -> Bool
@@ -14,38 +14,58 @@ sprove ax = iprove . embed ax
 
 -- | Prove a intuitionistic theorem (m-G4ip)
 iprove :: Formula -> Bool
-iprove = prove True . S.singletonR
+iprove = prove Int . singletonRight
 
 -- | Prove a classical theorem (G3cp)
 cprove :: Formula -> Bool
-cprove = prove False . S.singletonR
+cprove = prove Cl . singletonRight
 
 -- | Check the sequent is provable depending on the logic
-prove :: Bool -> S.Sequent -> Bool
-prove i s
+prove :: Logic -> Sequent -> Bool
+prove l s@(Sequent _ x y)
   -- Initial sequent
-  | M.bot (S.x s) || M.top (S.y s) = True
+  | M.bot x || M.top y = True
   -- Glivenko's optimisation
-  | i, S.y s == M.singleton Bot = prove False s
+  | l == Int, y == M.singleton Bot = prove Cl s
   -- Right disjunction
-  | Just (a, b, s1) <- S.rDis s = prove i (a +> b +> s1)
+  | Just (a :| b, s1) <- takeRight s = prove l (a +> b +> s1)
   -- Left conjunction
-  | Just (a, b, s1) <- S.lCon s = prove i (a +< b +< s1)
-  -- Right implication (invertible)
-  | Just (a, b, s1) <- S.rImp s, not i || S.y s == M.empty = prove i (a +< b +> s1)
-  -- Left implication (invertible)
-  | not i, Just (a, b, s1) <- S.lImp s = prove i (a +> s1) && prove i (b +< s1)
-  | Just (c :& d, b, s1) <- S.lInvImp s = prove i (c :> (d :> b) +< s1)
-  | Just (c :| d, b, s1) <- S.lInvImp s = prove i (c :> b +< d :> b +< s1)
+  | Just (a :& b, s1) <- takeLeft s = prove l (a +< b +< s1)
+  -- Right implication
+  | Just (a :> b, s1) <- takeRight s
+  , l == Cl || y == M.empty = prove l (a +< b +> s1)
+  -- Left implication (intuitionistic)
+  | Just (c :& d :> b, s1) <- takeLeft s = prove l (c :> (d :> b) +< s1)
+  | Just (c :| d :> b, s1) <- takeLeft s = prove l (c :> b +< d :> b +< s1)
+  -- Check next formula
+  | Just s1 <- S.iterate s = prove l s1
+  -- Move on to binary rules
+  | otherwise = prove1 l (S.reset s)
+
+-- | Helper function for binary rules
+prove1 :: Logic -> Sequent -> Bool
+prove1 l s
   -- Right conjunction
-  | Just (a, b, s1) <- S.rCon s = prove i (a +> s1) && prove i (b +> s1)
+  | Just (a :& b, s1) <- takeRight s = prove l (a +> s1) && prove l (b +> s1)
   -- Left disjunction (Weich's optimisation)
-  | Just (a, b, s1) <- S.lDis s = prove i (a +< s1) && prove i (b +< a +> s1)
-  -- Right implication (non-invertible)
-  | Just _ <- S.rFindImp (\case(a, b) -> prove i (a +< b +> s { S.y = M.empty })) s = True
-  -- Left implication (non-invertible)
-  | Just (_, b, s1) <- S.lFindImp (\case
-    e@(c :> d, b) -> prove i (c +< d :> b +< d +> s { S.x = M.idel e (S.x s), S.y = M.empty })
-    _ -> False) s = prove i (b +< s1)
+  | Just (a :| b, s1) <- takeLeft s = prove l (a +< s1) && prove l (b +< a +> s1)
+  -- Left implication (classical)
+  | l == Cl, Just (a :> b, s1) <- takeLeft s = prove l (a +> s1) && prove l (b +< s1)
+  -- Check next formula
+  | Just s1 <- S.iterate s = prove1 l s1
+  -- Move on to non-invertible rules
+  | otherwise = prove2 (S.reset s)
+
+-- | Helper function for non-invertible rules
+prove2 :: Sequent -> Bool
+prove2 s
+  -- Right implication
+  | Just (a :> b, s1) <- takeRight s
+  , prove Int (a +< s1 {right = M.singleton b}) = True
+  -- Left implication
+  | Just ((c :> d) :> b, s1) <- takeLeft s
+  , prove Int (c +< d :> b +< s1 {right = M.singleton d}) = prove Int (b +< s1)
+  -- Check next formula
+  | Just s1 <- S.iterate s = prove2 s1
   -- Failed to prove
   | otherwise = False

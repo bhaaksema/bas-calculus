@@ -1,4 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
 module Sequent where
 
 import qualified Data.Map as M
@@ -8,60 +7,48 @@ import Multiset
 
 -- | Multi succedent sequent
 data Sequent = Sequent {
-  f :: M.Map String Formula,
-  x :: Multiset,
-  y :: Multiset
+  smap  :: M.Map String Formula,
+  left  :: Multiset,
+  right :: Multiset
 }
 
 -- | Create a sequent from a formula
-singletonR :: Formula -> Sequent
-singletonR a = Sequent M.empty empty (singleton $ simplify a)
+singletonRight :: Formula -> Sequent
+singletonRight a = Sequent M.empty empty (singleton $ simplify a)
 
-apply :: Sequent -> Sequent
-apply s = let
-  s0 = s { x = empty, y = empty }
-  s1 = foldr ((+<) . alter (f s)) s0 (contents (x s))
-  in foldr ((+>) . alter (f s)) s1 (contents (y s))
-
-insertL :: Formula -> Sequent -> Sequent
-insertL (Var str) s        = apply s { f = M.insert str Top (f s), x = insert Top (x s) }
-insertL (Var str :> Bot) s = apply s { f = M.insert str Top (f s), x = insert Bot (x s) }
-insertL a s                = s { x = insert (alter (f s) a) (x s) }
-
+-- | Insert a formula into the antecedent
 (+<) :: Formula -> Sequent -> Sequent
-(+<) = insertL
+a +< s = reset $ case a of
+  Var str        -> apply str Top
+  Var str :> Bot -> apply str Bot
+  _              -> s {left = insert (subst (smap s) a) (left s)}
+  where
+    apply str atom = let
+      s1 = Sequent (M.insert str atom (smap s)) (singleton atom) empty
+      s2 = foldr ((+<) . subst (smap s1)) s1 (toList (left s))
+      in foldr ((+>) . subst (smap s2)) s2 (toList (right s))
 infixr 5 +<
 
-insertR :: Formula -> Sequent -> Sequent
-insertR a s = s { y = insert (alter (f s) a) (y s) }
-
+-- | Insert a formula into the succedent
 (+>) :: Formula -> Sequent -> Sequent
-(+>) = insertR
+a +> s = reset s {right = insert (subst (smap s) a) (right s)}
 infixr 5 +>
 
-lCon :: Sequent -> Maybe (Formula, Formula, Sequent)
-lCon s = (\(a, b, x1) -> (a, b, s { x = x1 })) <$> cget (x s)
+-- | Take the first formula from the antecedent
+takeLeft :: Sequent -> Maybe (Formula, Sequent)
+takeLeft s = (\(a, x1) -> (a, s {left = x1})) <$> pop (left s)
 
-lDis :: Sequent -> Maybe (Formula, Formula, Sequent)
-lDis s = (\(a, b, x1) -> (a, b, s { x = x1 })) <$> dget (x s)
+-- | Take the first formula from the succedent
+takeRight :: Sequent -> Maybe (Formula, Sequent)
+takeRight s = (\(a, y1) -> (a, s {right = y1})) <$> pop (right s)
 
-lImp :: Sequent -> Maybe (Formula, Formula, Sequent)
-lImp s = (\(a, b, x1) -> (a, b, s { x = x1 })) <$> iget (x s)
+-- | Move a new formula to the front
+iterate :: Sequent -> Maybe Sequent
+iterate s
+  | Just l <- down (left s) = Just s {left = l}
+  | Just r <- down (right s) = Just s {right = r}
+  | otherwise = Nothing
 
-rCon :: Sequent -> Maybe (Formula, Formula, Sequent)
-rCon s = (\(a, b, y1) -> (a, b, s { y = y1 })) <$> cget (y s)
-
-rDis :: Sequent -> Maybe (Formula, Formula, Sequent)
-rDis s = (\(a, b, y1) -> (a, b, s { y = y1 })) <$> dget (y s)
-
-rImp :: Sequent -> Maybe (Formula, Formula, Sequent)
-rImp s = (\(a, b, y1) -> (a, b, s { y = y1 })) <$> iget (y s)
-
-lFindImp :: ((Formula, Formula) -> Bool) -> Sequent -> Maybe (Formula, Formula, Sequent)
-lFindImp p s = (\(a, b, x1) -> (a, b, s { x = x1 })) <$> ifind p (x s)
-
-lInvImp :: Sequent -> Maybe (Formula, Formula, Sequent)
-lInvImp = lFindImp (\case (_ :& _, _) -> True; (_ :| _, _) -> True; _ -> False)
-
-rFindImp :: ((Formula, Formula) -> Bool) -> Sequent -> Maybe (Formula, Formula, Sequent)
-rFindImp p s = (\(a, b, y1) -> (a, b, s { y = y1 })) <$> ifind p (y s)
+-- | Reset the order of the formulas
+reset :: Sequent -> Sequent
+reset s = s {left = ceil (left s), right = ceil (right s)}

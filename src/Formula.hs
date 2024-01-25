@@ -24,29 +24,29 @@ infix 5 `iff`
 
 -- | Simplify a formula
 simplify :: Formula -> Formula
-simplify = alter M.empty
+simplify = subst M.empty
 
--- | Alter and reduce a formula
-alter :: M.Map String Formula -> Formula -> Formula
-alter f (a :& b)
+-- | Substitute and reduce a formula
+subst :: M.Map String Formula -> Formula -> Formula
+subst f (a :& b)
   | c == d || d == Top = c
   | c == Top = d
   | c == Bot || d == Bot = Bot
   | otherwise = c :& d
-  where c = alter f a; d = alter f b
-alter f (a :| b)
+  where c = subst f a; d = subst f b
+subst f (a :| b)
   | c == d || d == Bot = c
   | c == Bot = d
   | c == Top || d == Top = Top
   | otherwise = c :| d
-  where c = alter f a; d = alter f b
-alter f (a :> b)
+  where c = subst f a; d = subst f b
+subst f (a :> b)
   | c == d || d == Top || c == Bot = Top
   | c == Top = d
   | otherwise = c :> d
-  where c = alter f a; d = alter f b
-alter f (Var s) | Just a <- f M.!? s = simplify a
-alter _ a = a
+  where c = subst f a; d = subst f b
+subst f (Var s) | Just a <- f M.!? s = simplify a
+subst _ a = a
 
 -- | Show instance for Formula
 instance Show Formula where
