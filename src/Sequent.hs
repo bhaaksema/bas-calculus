@@ -55,6 +55,6 @@ take :: Sequent -> Maybe (SFormula, Sequent)
 take s = (\(a, as) -> (a, s {bin1 = as})) <$> uncons (bin1 s)
 
 -- | Move the stack pointer, reset if empty
-iterate :: Sequent -> (Bool, Sequent)
-iterate (S m [] bs)       = (False, S m bs [])
-iterate (S m (a : as) bs) = (True, S m as (a : bs))
+iterate :: Sequent -> Sequent
+iterate (S m [] bs)       = S m bs []
+iterate (S m (a : as) bs) = S m as (a : bs)
