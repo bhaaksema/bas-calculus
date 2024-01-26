@@ -1,54 +1,60 @@
+{-# LANGUAGE FlexibleInstances #-}
 module Sequent where
 
-import qualified Data.Map as M
+import           Data.Bifunctor (bimap)
+import qualified Data.Either    as E
+import           Data.List      (uncons)
+import qualified Data.Map       as M
 
 import Formula
-import Multiset
+
+-- | Signed formula
+type SFormula = Either Formula Formula
 
 -- | Multi succedent sequent
-data Sequent = Sequent {
-  smap  :: M.Map String Formula,
-  left  :: Multiset,
-  right :: Multiset
+data Sequent = S {
+  smap :: M.Map String Formula,
+  bin1 :: [SFormula],
+  bin2 :: [SFormula]
 }
 
--- | Create a sequent from a formula
-singletonRight :: Formula -> Sequent
-singletonRight a = Sequent M.empty empty (singleton $ simplify a)
+-- | Create a sequent from a signed formula
+singleton :: SFormula -> Sequent
+singleton a = S M.empty [a] []
 
--- | Insert a formula into the antecedent
-(+<) :: Formula -> Sequent -> Sequent
-a +< s = case a of
-  Var str        -> apply str Top
-  Var str :> Bot -> apply str Bot
-  _              -> s {left = insert (subst (smap s) a) (left s)}
-  where
-    apply str atom = let -- side effect, resets stack pointers
-      s1 = Sequent (M.insert str atom (smap s)) (singleton atom) empty
-      s2 = foldr ((+<) . subst (smap s1)) s1 (toList (left s))
-      in foldr ((+>) . subst (smap s2)) s2 (toList (right s))
-infixr 5 +<
+-- | Get the formulas in the antecedent
+lefts :: Sequent -> [Formula]
+lefts s = E.lefts (bin1 s ++ bin2 s)
 
--- | Insert a formula into the succedent
-(+>) :: Formula -> Sequent -> Sequent
-a +> s = s {right = insert (subst (smap s) a) (right s)}
-infixr 5 +>
+-- | Get the formulas in the succedent
+rights :: Sequent -> [Formula]
+rights s = E.rights (bin1 s ++ bin2 s)
 
--- | Take the first formula from the antecedent
-takeLeft :: Sequent -> Maybe (Formula, Sequent)
-takeLeft s = (\(a, x1) -> (a, s {left = x1})) <$> pop (left s)
+-- | Insert a signed formula into the sequent
+-- resets the stack pointer
+insert :: SFormula -> Sequent -> Sequent
+insert a (S m as bs) = case bimap (subst m) (subst m) a of
+  Left (Var str)        -> update str Top
+  Left (Var str :> Bot) -> insert (Left Bot) $ update str Bot
+  b                     -> S m (b : as) bs
+  where update str b = as ++ bs +> S (M.insert str b m) [] []
 
--- | Take the first formula from the succedent
-takeRight :: Sequent -> Maybe (Formula, Sequent)
-takeRight s = (\(a, y1) -> (a, s {right = y1})) <$> pop (right s)
+-- | Insert a list of signed formulas into the sequent
+-- resets the stack pointer
+(+>) :: [SFormula] -> Sequent -> Sequent
+(+>) as s = foldr insert s as
+infix 4 +>
 
--- | Move a new formula to the front
-iterate :: Sequent -> Maybe Sequent
-iterate s
-  | Just l <- down (left s) = Just s {left = l}
-  | Just r <- down (right s) = Just s {right = r}
-  | otherwise = Nothing
+-- | Replace the succedent with a single formula
+-- resets the stack pointer
+setRight :: Formula -> Sequent -> Sequent
+setRight a s = Right a : map Left (lefts s) +> S (smap s) [] []
 
--- | Reset the order of the formulas
-reset :: Sequent -> Sequent
-reset s = s {left = ceil (left s), right = ceil (right s)}
+-- | Pop the formula at the stack pointer
+take :: Sequent -> Maybe (SFormula, Sequent)
+take s = (\(a, as) -> (a, s {bin1 = as})) <$> uncons (bin1 s)
+
+-- | Move the stack pointer, reset if empty
+iterate :: Sequent -> (Bool, Sequent)
+iterate (S m [] bs)       = (False, S m bs [])
+iterate (S m (a : as) bs) = (True, S m as (a : bs))

@@ -24,9 +24,6 @@ fors a        = S.singleton a
 cons :: Formula -> S.Set Formula
 cons = S.map (foldl1 (:&)) . S.delete S.empty . S.powerSet . fors
 
--- | Axiom is kind of a formula
-type Axiom = Formula
-
 -- | Substitute all variables in a formula
 vmap :: (String -> Formula) -> Formula -> Formula
 vmap f (a :& b) = vmap f a :& vmap f b
@@ -34,6 +31,9 @@ vmap f (a :| b) = vmap f a :| vmap f b
 vmap f (a :> b) = vmap f a :> vmap f b
 vmap f (Var s)  = f s
 vmap _ a        = a
+
+-- | Axiom is kind of a formula
+type Axiom = Formula
 
 -- | Generalized bounding function
 bfunc :: (Formula -> S.Set Formula) -> [Axiom] -> Formula -> S.Set Formula
