@@ -13,6 +13,9 @@ infix 8 :&
 infix 7 :|
 infixr 6 :>
 
+-- | Signed propositional formula
+type SFormula = Either Formula Formula
+
 -- | Negation of a formula
 neg :: Formula -> Formula
 neg a = a :> Bot

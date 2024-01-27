@@ -19,7 +19,7 @@ common shared-props
 library
     import:           shared-props
     exposed-modules:  Formula, Prover
-    other-modules:    Embed, Sequent
+    other-modules:    Embed, Multiset
     hs-source-dirs:   src
 
 test-suite hseq-test
