@@ -1,6 +1,5 @@
 module Prover (sprove, iprove, cprove) where
 
-
 import Embed   (Axiom, embed)
 import Formula
 import Sequent
@@ -24,7 +23,7 @@ prove :: Logic -> Sequent -> Bool
 prove l xs = let x = tail xs in case head xs of
   -- Initial sequents
   (0, Left Bot) -> True; (0, Right Top) -> True
-  -- Glivenko's optimisation
+  -- Glivenko's optimisation (intuitionistic)
   (_, Right Bot) | l == Int, null (rights x) -> prove Cl xs
   -- Replace Left
   (1, Left (Var s)) -> prove l (Top `left` sub (s, Top) x)
@@ -44,8 +43,9 @@ prove l xs = let x = tail xs in case head xs of
   -- Right conjunction
   (3, Right (a :& b)) -> prove l (a `right` x) && prove l (b `right` x)
   -- Left implication (intuitionistic)
-  (4, Left ((c :> d) :> b)) | prove l (c `left` (d :> b) `left` d `setRight` x)
+  (4, Left ((c :> d) :> b)) | l == Int, prove l (c `left` d :> b `left` d `setRight` x)
     -> prove l (b `left` x)
   -- Right implication (intuitionistic)
-  (4, Right (a :> b)) | prove l (a `left` b `setRight` x) -> True
+  (4, Right (a :> b)) | l == Int, prove l (a `left` b `setRight` x) -> True
+  -- Reorder formulae in the sequent
   (p, a) -> (p < 5) && prove l ((succ p, a) `insert` x)
