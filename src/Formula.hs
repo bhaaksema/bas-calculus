@@ -1,15 +1,14 @@
 module Formula where
 
 -- | Propositional formula
-data Formula = Bot | Top
-  | Var String
-  | Formula :> Formula
-  | Formula :| Formula
+data Formula = Var String | Bot | Top
   | Formula :& Formula
+  | Formula :| Formula
+  | Formula :> Formula
   deriving (Eq, Ord)
-infixr 6 :>
-infix 7 :|
 infix 8 :&
+infix 7 :|
+infixr 6 :>
 
 -- | Signed propositional formula
 type SFormula = Either Formula Formula
@@ -24,32 +23,30 @@ neg a = a :> Bot
 infix 5 <:>
 
 -- | Simplify a formula
-simplify :: Formula -> Formula
-simplify = subst ("", Var "")
+simply :: Formula -> Formula
+simply = snd . alter Nothing
 
--- | Substitute and reduce a formula
-subst :: (String, Formula) -> Formula -> Formula
-subst f (a1 :& b1)
-  | a == b || b == Top = a
-  | a == Top = b
-  | a == Bot || b == Bot = Bot
-  | otherwise = a :& b
-  where a = subst f a1; b = subst f b1
-subst f (a1 :| b1)
-  | a == b || b == Bot = a
-  | a == Bot = b
-  | a == Top || b == Top = Top
-  | otherwise = a :| b
-  where a = subst f a1; b = subst f b1
-subst f (a1 :> b1)
-  | a == b || b == Top || a == Bot = Top
-  | a == Top = b
-  | c :& d <- a = c :> (d :> b)
-  | c :| d <- a = (c :> b) :& (d :> b)
-  | otherwise = a :> b
-  where a = subst f a1; b = subst f b1
-subst (s1, a) (Var s2) | s1 == s2 = a
-subst _ a = a
+-- | Reduce a formula and possibly apply a substitution
+alter :: Maybe (String, Formula) -> Formula -> (Bool, Formula)
+alter f (a1 :& b1)
+  | a == b || b == Top = (True, a)
+  | a == Top = (True, b)
+  | a == Bot || b == Bot = (True, Bot)
+  | otherwise = (u1 || u2, a :& b)
+  where (u1, a) = alter f a1; (u2, b) = alter f b1
+alter f (a1 :| b1)
+  | a == b || b == Bot = (True, a)
+  | a == Bot = (True, b)
+  | a == Top || b == Top = (True, Top)
+  | otherwise = (u1 || u2, a :| b)
+  where (u1, a) = alter f a1; (u2, b) = alter f b1
+alter f (a1 :> b1)
+  | a == b || b == Top || a == Bot = (True, Top)
+  | a == Top = (True, b)
+  | otherwise = (u1 || u2, a :> b)
+  where (u1, a) = alter f a1; (u2, b) = alter f b1
+alter (Just (s1, a)) (Var s2) | s1 == s2 = (True, a)
+alter _ a = (False, a)
 
 -- | Show instance for Formula
 instance Show Formula where

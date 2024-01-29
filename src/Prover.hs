@@ -1,8 +1,8 @@
 module Prover (sprove, iprove, cprove) where
 
-import Embed   (Axiom, embed)
-import Formula
-import Sequent
+import           Embed   (Axiom, embed)
+import           Formula
+import qualified Sequent as S
 
 data Logic = Int | Cl deriving Eq
 
@@ -12,40 +12,48 @@ sprove ax = iprove . embed ax
 
 -- | Prove a intuitionistic theorem (m-G4ip)
 iprove :: Formula -> Bool
-iprove = prove Int . singleton . Right
+iprove = prove Int . S.singletonRight . simply
 
 -- | Prove a classical theorem (G3cp)
 cprove :: Formula -> Bool
-cprove = prove Cl . singleton . Right
+cprove = prove Cl . S.singletonRight . simply
 
 -- | Check the sequent is provable depending on the logic
-prove :: Logic -> Sequent -> Bool
-prove l xs = let x = tail xs in case head xs of
+prove :: Logic -> S.Sequent -> Bool
+prove l xs | x <- tail xs = case head xs of
+  -- Glivenko's optimisation
+  (_, Right Bot) | l == Int, null (S.rights x)
+    -> prove Cl xs
   -- Initial sequents
-  (0, Left Bot) -> True; (0, Right Top) -> True
-  -- Glivenko's optimisation (intuitionistic)
-  (_, Right Bot) | l == Int, null (rights x) -> prove Cl xs
-  -- Replace Left
-  (1, Left (Var s)) -> prove l (Top `left` sub (s, Top) x)
-  -- Replace Left-neg
-  (1, Left (Var s :> Bot)) -> prove l (Bot `left` sub (s, Bot) x)
-  -- Left conjunction
-  (2, Left (a :& b)) -> prove l (a `left` b `left` x)
-  -- Right disjunction
-  (2, Right (a :| b)) -> prove l (a `right` b `right` x)
-  -- Right implication (classical)
-  (2, Right (a :> b)) | l == Cl || null (rights x)
-    -> prove l (a `left` b `right` x)
-  -- Left disjunction (Weich's optimisation)
-  (3, Left (a :| b)) -> prove l (a `left` x) && prove l (b `left` a `right` x)
-  -- Left implication (classical)
-  (3, Left (a :> b)) | l == Cl -> prove l (a `right` x) && prove l (b `left` x)
-  -- Right conjunction
-  (3, Right (a :& b)) -> prove l (a `right` x) && prove l (b `right` x)
-  -- Left implication (intuitionistic)
-  (4, Left ((c :> d) :> b)) | l == Int, prove l (c `left` d :> b `left` d `setRight` x)
-    -> prove l (b `left` x)
-  -- Right implication (intuitionistic)
-  (4, Right (a :> b)) | l == Int, prove l (a `left` b `setRight` x) -> True
-  -- Reorder formulae in the sequent
-  (p, a) -> (p < 5) && prove l ((succ p, a) `insert` x)
+  (0, a) | a == Left Bot || a == Right Top -> True
+  -- Replacement rules
+  (1, Left (Var s))
+    -> prove l (S.left Top $ map (S.substi s Top) x)
+  (1, Left (Var s :> Bot))
+    -> prove l (S.left Bot $ map (S.substi s Bot) x)
+  -- Unary premise rules
+  (2, Right (a :| b))
+    -> prove l (S.right a $ S.right b x)
+  (2, Right (a :> b)) | l == Cl || null (S.rights x)
+    -> prove l (S.left a $ S.right b x)
+  (2, Left (a :& b))
+    -> prove l (S.left a $ S.left b x)
+  (2, Left ((c :& d) :> b))
+    -> prove l (S.left (c :> d :> b) x)
+  (2, Left ((c :| d) :> b))
+    -> prove l (S.left (c :> b) $ S.left (d :> b) x)
+  -- Binary premise rules
+  (3, Right (a :& b))
+    -> all (prove l) [S.right a x, S.right b x]
+  (3, Left (a :| b))
+    -> all (prove l) [S.left a x, S.left b $ S.right a x]
+  (3, Left (a :> b)) | l == Cl
+    -> all (prove l) [S.right a x, S.left b x]
+  -- Non-invertible rules
+  (4, Right (a :> b))
+    | prove l (S.left a $ S.setRight b x) -> True
+  (4, Left ((c :> d) :> b))
+    | prove l (S.left c $ S.left (d :> b) $ S.setRight d x)
+    -> prove l (S.left b x)
+  -- Continue or fail
+  (p, a) -> (p < 5) && prove l (S.insert (succ p, a) x)
