@@ -20,17 +20,14 @@ cprove = prove Cl . S.singletonRight . simply
 
 -- | Check the sequent is provable depending on the logic
 prove :: Logic -> S.Sequent -> Bool
-prove l xs | x <- tail xs = case head xs of
-  -- Glivenko's optimisation
-  (_, Right Bot) | l == Int, null (S.rights x)
-    -> prove Cl xs
+prove _ [] = False
+prove l (e : x) = case e of
   -- Initial sequents
-  (0, a) | a == Left Bot || a == Right Top -> True
+  (0, Left Bot) -> True; (0, Right Top) -> True
   -- Replacement rules
-  (1, Left (Var s))
-    -> prove l (S.left Top $ map (S.substi s Top) x)
-  (1, Left (Var s :> Bot))
-    -> prove l (S.left Bot $ map (S.substi s Bot) x)
+  (1, Right Bot) -> prove l x
+  (1, Left (Var s)) -> prove l (map (S.substi s Top) x)
+  (1, Left (Var s :> Bot)) -> prove l (map (S.substi s Bot) x)
   -- Unary premise rules
   (2, Right (a :| b))
     -> prove l (S.right a $ S.right b x)
@@ -47,7 +44,7 @@ prove l xs | x <- tail xs = case head xs of
     -> all (prove l) [S.right a x, S.right b x]
   (3, Left (a :| b))
     -> all (prove l) [S.left a x, S.left b $ S.right a x]
-  (3, Left (a :> b)) | l == Cl
+  (3, Left (a :> b)) | l == Cl || null (S.rights x)
     -> all (prove l) [S.right a x, S.left b x]
   -- Non-invertible rules
   (4, Right (a :> b))
