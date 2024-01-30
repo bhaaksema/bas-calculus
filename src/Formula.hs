@@ -10,9 +10,6 @@ infix 8 :&
 infix 7 :|
 infixr 6 :>
 
--- | Signed propositional formula
-type SFormula = Either Formula Formula
-
 -- | Negation of a formula
 neg :: Formula -> Formula
 neg a = a :> Bot
@@ -50,13 +47,22 @@ alter _ a = (False, a)
 
 -- | Show instance for Formula
 instance Show Formula where
-  show c
-    | a :& b <- c = showUn a ++ " ∧ " ++ showUn b
-    | a :| b <- c = showUn a ++ " ∨ " ++ showUn b
-    | a :> b <- c, b /= Bot = showUn a ++ " → " ++ showUn b
-    | otherwise = showUn c where
-    showUn (Var s)    = s
-    showUn Bot        = "⊥"
-    showUn Top        = "⊤"
-    showUn (a :> Bot) = '¬' : showUn a
-    showUn y          = '(' : show y ++ ")"
+  showsPrec _ (Var s) = showString s
+  showsPrec _ Bot = showChar '⊥'
+  showsPrec _ Top = showChar '⊤'
+  showsPrec p (a :& b) = showParen (p > 8) $
+    showsPrec 8 a . showString " ∧ " . showsPrec 8 b
+  showsPrec p (a :| b) = showParen (p > 7) $
+    showsPrec 7 a . showString " ∨ " . showsPrec 7 b
+  showsPrec _ (a :> Bot) = showChar '¬' . showsPrec 9 a
+  showsPrec p (a :> b) = showParen (p > 6) $
+    showsPrec 7 a . showString " → " . showsPrec 6 b
+
+-- | Sign for a propositional formula
+data Sign a = T {unsign :: a} | F {unsign :: a}
+  deriving (Eq, Show)
+
+-- | Functor instance for Sign
+instance Functor Sign where
+  fmap f (T a) = T $ f a
+  fmap f (F a) = F $ f a
