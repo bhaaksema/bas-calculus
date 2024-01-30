@@ -1,6 +1,8 @@
 module Sequent where
 
-import Data.List (insertBy)
+import qualified Data.List as L
+import qualified Data.Map  as M
+
 import Formula
 
 -- | Sequent is a queue of formulae
@@ -22,10 +24,10 @@ replaceFs a x = (0, F a) : [b | b@(_, T _) <- x]
 
 -- | Enqueue a signed formula into the sequent
 insert :: SequentItem -> Sequent -> Sequent
-insert = insertBy (\a b -> compare (fst a) (fst b))
+insert = L.insertBy (\a b -> compare (fst a) (fst b))
 
 -- | Substitute a signed formulae, reset order when updated
 substi :: String -> Formula -> SequentItem -> SequentItem
-substi s b (p, a) = case Just (s, b) `alter` unsign a of
+substi s b (p, a) = case M.singleton s b `alter` unsign a of
   (True, c) -> (0, c <$ a)
   _         -> (p, a)

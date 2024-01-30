@@ -6,11 +6,11 @@ import qualified Data.Set as S
 import Formula
 
 -- | Set of variables of a formula
-vars :: Formula -> S.Set Formula
+vars :: Formula -> S.Set String
 vars (a :& b) = vars a `S.union` vars b
 vars (a :| b) = vars a `S.union` vars b
 vars (a :> b) = vars a `S.union` vars b
-vars (Var s)  = S.singleton (Var s)
+vars (Var s)  = S.singleton s
 vars _        = S.empty
 
 -- | Set of subformulas of a formula
@@ -24,22 +24,14 @@ fors a        = S.singleton a
 cons :: Formula -> S.Set Formula
 cons = S.map (foldl1 (:&)) . S.delete S.empty . S.powerSet . fors
 
--- | Substitute all variables in a formula
-vmap :: (String -> Formula) -> Formula -> Formula
-vmap f (a :& b) = vmap f a :& vmap f b
-vmap f (a :| b) = vmap f a :| vmap f b
-vmap f (a :> b) = vmap f a :> vmap f b
-vmap f (Var s)  = f s
-vmap _ a        = a
-
 -- | Axiom is kind of a formula
 type Axiom = Formula
 
 -- | Generalized bounding function
-bfunc :: (Formula -> S.Set Formula) -> [Axiom] -> Formula -> S.Set Formula
-bfunc f axi a = S.fromList [vmap (M.fromDistinctAscList m M.!) ax | ax <- axi, m <- maps ax]
- where maps ax = sequence [[(s, b) | b <- S.toList (f a)] | Var s <- S.toList (vars ax)]
+bfunc :: [Axiom] -> S.Set Formula -> [Formula]
+bfunc axi as = [snd $ alter m ax | ax <- axi,
+  m <- foldr (\s -> (M.insert s <$> S.toList as <*>)) [M.empty] (vars ax)]
 
 -- | Embed an intermediate logic into intuitionistic logic
 embed :: [Axiom] -> Formula -> Formula
-embed axi a = foldl (:&) Top (bfunc cons axi a) :> a
+embed axi a = foldl (:&) Top (bfunc axi (cons a)) :> a

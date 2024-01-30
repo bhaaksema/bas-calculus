@@ -1,7 +1,10 @@
 module Formula where
 
+import qualified Data.Map as M
+
 -- | Propositional formula
-data Formula = Var String | Bot | Top
+data Formula = Bot | Top
+  | Var String
   | Formula :& Formula
   | Formula :| Formula
   | Formula :> Formula
@@ -10,39 +13,39 @@ infix 8 :&
 infix 7 :|
 infixr 6 :>
 
--- | Negation of a formula
+-- | Negation of formula
 neg :: Formula -> Formula
 neg a = a :> Bot
 
--- | Bi-implication of two formulas
+-- | Bi-implication of two formulae
 (<:>) :: Formula -> Formula -> Formula
 (<:>) a b = (a :> b) :& (b :> a)
 infix 5 <:>
 
--- | Simplify a formula
+-- | Simplify formula
 simply :: Formula -> Formula
-simply = snd . alter Nothing
+simply = snd . alter M.empty
 
--- | Reduce a formula and possibly apply a substitution
-alter :: Maybe (String, Formula) -> Formula -> (Bool, Formula)
-alter f (a1 :& b1)
+-- | Reduce and substitute formula
+alter :: M.Map String Formula -> Formula -> (Bool, Formula)
+alter m (a1 :& b1)
   | a == b || b == Top = (True, a)
   | a == Top = (True, b)
   | a == Bot || b == Bot = (True, Bot)
   | otherwise = (u1 || u2, a :& b)
-  where (u1, a) = alter f a1; (u2, b) = alter f b1
-alter f (a1 :| b1)
+  where (u1, a) = alter m a1; (u2, b) = alter m b1
+alter m (a1 :| b1)
   | a == b || b == Bot = (True, a)
   | a == Bot = (True, b)
   | a == Top || b == Top = (True, Top)
   | otherwise = (u1 || u2, a :| b)
-  where (u1, a) = alter f a1; (u2, b) = alter f b1
-alter f (a1 :> b1)
+  where (u1, a) = alter m a1; (u2, b) = alter m b1
+alter m (a1 :> b1)
   | a == b || b == Top || a == Bot = (True, Top)
   | a == Top = (True, b)
   | otherwise = (u1 || u2, a :> b)
-  where (u1, a) = alter f a1; (u2, b) = alter f b1
-alter (Just (s1, a)) (Var s2) | s1 == s2 = (True, a)
+  where (u1, a) = alter m a1; (u2, b) = alter m b1
+alter m (Var s) | Just a <- m M.!? s = (True, a)
 alter _ a = (False, a)
 
 -- | Show instance for Formula
@@ -58,7 +61,7 @@ instance Show Formula where
   showsPrec p (a :> b) = showParen (p > 6) $
     showsPrec 7 a . showString " → " . showsPrec 6 b
 
--- | Sign for a propositional formula
+-- | Sign for propositional formula
 data Sign a = T {unsign :: a} | F {unsign :: a}
   deriving (Eq, Show)
 
