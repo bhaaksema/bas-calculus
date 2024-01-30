@@ -29,7 +29,7 @@ type Axiom = Formula
 
 -- | Generalized bounding function
 bfunc :: [Axiom] -> S.Set Formula -> [Formula]
-bfunc axi as = [snd $ alter m ax | ax <- axi,
+bfunc axi as = [alter m ax | ax <- axi,
   m <- foldr (\s -> (M.insert s <$> S.toList as <*>)) [M.empty] (vars ax)]
 
 -- | Embed an intermediate logic into intuitionistic logic

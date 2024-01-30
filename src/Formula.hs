@@ -24,29 +24,33 @@ infix 5 <:>
 
 -- | Simplify formula
 simply :: Formula -> Formula
-simply = snd . alter M.empty
+simply = alter M.empty
+
+-- | Substitute formula
+alter1 :: String -> Formula -> Formula -> Formula
+alter1 s a = alter (M.singleton s a)
 
 -- | Reduce and substitute formula
-alter :: M.Map String Formula -> Formula -> (Bool, Formula)
+alter :: M.Map String Formula -> Formula -> Formula
 alter m (a1 :& b1)
-  | a == b || b == Top = (True, a)
-  | a == Top = (True, b)
-  | a == Bot || b == Bot = (True, Bot)
-  | otherwise = (u1 || u2, a :& b)
-  where (u1, a) = alter m a1; (u2, b) = alter m b1
+  | a == b || b == Top = a
+  | a == Top = b
+  | a == Bot || b == Bot = Bot
+  | otherwise = a :& b
+  where a = alter m a1; b = alter m b1
 alter m (a1 :| b1)
-  | a == b || b == Bot = (True, a)
-  | a == Bot = (True, b)
-  | a == Top || b == Top = (True, Top)
-  | otherwise = (u1 || u2, a :| b)
-  where (u1, a) = alter m a1; (u2, b) = alter m b1
+  | a == b || b == Bot = a
+  | a == Bot = b
+  | a == Top || b == Top = Top
+  | otherwise = a :| b
+  where a = alter m a1; b = alter m b1
 alter m (a1 :> b1)
-  | a == b || b == Top || a == Bot = (True, Top)
-  | a == Top = (True, b)
-  | otherwise = (u1 || u2, a :> b)
-  where (u1, a) = alter m a1; (u2, b) = alter m b1
-alter m (Var s) | Just a <- m M.!? s = (True, a)
-alter _ a = (False, a)
+  | a == b || b == Top || a == Bot = Top
+  | a == Top = b
+  | otherwise = a :> b
+  where a = alter m a1; b = alter m b1
+alter m (Var s) | Just a <- m M.!? s = a
+alter _ a = a
 
 -- | Show instance for Formula
 instance Show Formula where

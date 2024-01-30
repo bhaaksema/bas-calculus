@@ -1,7 +1,6 @@
 module Sequent where
 
 import qualified Data.List as L
-import qualified Data.Map  as M
 
 import Formula
 
@@ -26,8 +25,7 @@ replaceFs a x = (0, F a) : [b | b@(_, T _) <- x]
 insert :: SequentItem -> Sequent -> Sequent
 insert = L.insertBy (\a b -> compare (fst a) (fst b))
 
--- | Substitute a signed formulae, reset order when updated
+-- | Substitute a signed formula, reset order when updated
 substi :: String -> Formula -> SequentItem -> SequentItem
-substi s b (p, a) = case M.singleton s b `alter` unsign a of
-  (True, c) -> (0, c <$ a)
-  _         -> (p, a)
+substi s b (p, a) = if c == a then (p, a) else (0, c)
+  where c = alter1 s b <$> a
