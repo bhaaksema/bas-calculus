@@ -26,11 +26,11 @@ infix 5 <:>
 simply :: Formula -> Formula
 simply = alter M.empty
 
--- | Substitute formula
+-- | Simplify and apply one substitution
 alter1 :: String -> Formula -> Formula -> Formula
 alter1 s a = alter (M.singleton s a)
 
--- | Reduce and substitute formula
+-- | Simplify and apply a substitution map
 alter :: M.Map String Formula -> Formula -> Formula
 alter m (a1 :& b1)
   | a == b || b == Top = a
@@ -66,7 +66,7 @@ instance Show Formula where
     showsPrec 7 a . showString " → " . showsPrec 6 b
 
 -- | Sign for propositional formula
-data Sign a = T {unsign :: a} | F {unsign :: a}
+data Sign a = T a | F a
   deriving (Eq, Show)
 
 -- | Functor instance for Sign
