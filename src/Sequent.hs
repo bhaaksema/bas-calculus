@@ -13,10 +13,7 @@ single a = a <| S.empty
 
 -- | Cleverly insert a signed formula with priority
 (<|) :: SignedFormula -> Sequent -> Sequent
-a <| _ | a `elem` [T Bot, F Top] = S.singleton (0, a)
 a <| x | a `elem` [T Top, F Bot] = x
-F (a :| b) <| x = F a <| F b <| x
-T (a :& b) <| x = T a <| T b <| x
 a <| x = S.insert (0, a) x
 infixr <|
 
@@ -36,4 +33,5 @@ substi p c = substi' S.empty where
   substi' x se = case S.minView se of
     Just (a, z) -> let b = smap (alter1 p c) (snd a) in
       substi' (if b == snd a then S.insert a x else b <| x) z
+      where smap f (T d) = T $ f d; smap f (F d) = F $ f d
     Nothing -> x

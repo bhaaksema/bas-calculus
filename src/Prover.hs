@@ -31,8 +31,12 @@ prove l y = case S.minView y of
     (0, T (Var s)) -> prove l $ substi s Top x
     (0, T (Var s :> Bot)) -> prove l $ substi s Bot x
     -- Unary premise rules
+    (0, T (a :& b)) -> prove l $ T a <| T b <| x
+    (0, F (a :| b)) -> prove l $ F a <| F b <| x
     (0, F (a :> b)) | l == Cl || nullFs x
       -> prove l $ T a <| F b <| x
+    (0, T ((c :& d) :> b)) -> prove l $ T (c :> d :> b) <| x
+    (0, T ((c :| d) :> b)) -> prove l $ T (c :> b) <| T (d :> b) <| x
     -- Binary premise rules
     (1, F (a :& b)) -> all (prove l) [F a <| x, F b <| x]
     (1, T (a :| b)) -> all (prove l) [T a <| x, T b <| F a <| x]

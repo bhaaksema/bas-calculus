@@ -47,10 +47,7 @@ alter m (a1 :| b1)
 alter m (a1 :> b1)
   | a == b || b == Top || a == Bot = Top
   | a == Top = b
-  | otherwise = case a of
-    c :& d -> c :> d :> b
-    c :| d -> (c :> b) :& (d :> b)
-    _      -> a :> b
+  | otherwise = a :> b
   where a = alter m a1; b = alter m b1
 alter m (Var s) | Just a <- m M.!? s = a
 alter _ a = a
@@ -76,12 +73,5 @@ data SignedFormula = T Formula | F Formula
 instance Ord SignedFormula where
   compare (T a) (T b) = compare a b
   compare (F a) (F b) = compare b a
-  compare (F Top) _   = LT
-  compare _ (F Top)   = GT
   compare (T _) _     = LT
   compare _ (T _)     = GT
-
--- | Map a function over the formula of a signed formula
-smap :: (Formula -> Formula) -> SignedFormula -> SignedFormula
-smap f (T a) = T $ f a
-smap f (F a) = F $ f a
