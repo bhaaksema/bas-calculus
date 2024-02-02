@@ -47,7 +47,10 @@ alter m (a1 :| b1)
 alter m (a1 :> b1)
   | a == b || b == Top || a == Bot = Top
   | a == Top = b
-  | otherwise = a :> b
+  | otherwise = case a of
+    c :& d -> c :> d :> b
+    c :| d -> (c :> b) :& (d :> b)
+    _      -> a :> b
   where a = alter m a1; b = alter m b1
 alter m (Var s) | Just a <- m M.!? s = a
 alter _ a = a
@@ -66,10 +69,19 @@ instance Show Formula where
     showsPrec 7 a . showString " → " . showsPrec 6 b
 
 -- | Sign for propositional formula
-data Sign a = T a | F a
+data SignedFormula = T Formula | F Formula
   deriving (Eq, Show)
 
--- | Functor instance for Sign
-instance Functor Sign where
-  fmap f (T a) = T $ f a
-  fmap f (F a) = F $ f a
+-- | Ord instance for SignedFormula
+instance Ord SignedFormula where
+  compare (T a) (T b) = compare a b
+  compare (F a) (F b) = compare b a
+  compare (F Top) _   = LT
+  compare _ (F Top)   = GT
+  compare (T _) _     = LT
+  compare _ (T _)     = GT
+
+-- | Map a function over the formula of a signed formula
+smap :: (Formula -> Formula) -> SignedFormula -> SignedFormula
+smap f (T a) = T $ f a
+smap f (F a) = F $ f a
