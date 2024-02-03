@@ -47,6 +47,8 @@ alter m (a1 :| b1)
 alter m (a1 :> b1)
   | a == b || b == Top || a == Bot = Top
   | a == Top = b
+  | c :& d <- a = c :> d :> b
+  | c :| d <- a = (c :> b) :& (d :> b)
   | otherwise = a :> b
   where a = alter m a1; b = alter m b1
 alter m (Var s) | Just a <- m M.!? s = a
@@ -71,7 +73,31 @@ data SignedFormula = T Formula | F Formula
 
 -- | Ord instance for SignedFormula
 instance Ord SignedFormula where
-  compare (T a) (T b) = compare a b
-  compare (F a) (F b) = compare b a
-  compare (T _) _     = LT
-  compare _ (T _)     = GT
+  compare a b | a == b = EQ
+
+  compare (T Bot) _ = GT
+  compare (F Top) _ = GT
+  compare _ (T Bot) = LT
+  compare _ (F Top) = LT
+
+  compare (T (Var _)) _ = GT
+  compare (T (Var _ :> _)) _ = GT
+  compare (T (_ :& _)) _ = GT
+  compare (F (_ :| _)) _ = GT
+  compare _ (T (Var _)) = LT
+  compare _ (T (Var _ :> _)) = LT
+  compare _ (T (_ :& _)) = LT
+  compare _ (F (_ :| _)) = LT
+
+  compare (F (_ :> _)) _ = GT
+  compare _ (F (_ :> _)) = LT
+
+  compare (F (_ :& _)) _ = GT
+  compare (T (_ :| _)) _ = GT
+  compare _ (F (_ :& _)) = LT
+  compare _ (T (_ :| _)) = LT
+
+  compare (T (_ :> _)) _ = GT
+  compare _ (T (_ :> _)) = LT
+
+  compare _ _ = LT

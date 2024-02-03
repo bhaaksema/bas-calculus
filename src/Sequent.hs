@@ -5,16 +5,15 @@ import qualified Data.Set as S
 import Formula
 
 -- | Sequent is a ordered set of signed formulae
-type Sequent = S.Set (Word, SignedFormula)
+type Sequent = S.Set (Bool, SignedFormula)
 
 -- | Sequent with one signed formula
 single :: SignedFormula -> Sequent
 single a = a <| S.empty
 
--- | Cleverly insert a signed formula with priority
+-- | Insert a signed formula with initial priority
 (<|) :: SignedFormula -> Sequent -> Sequent
-a <| x | a `elem` [T Top, F Bot] = x
-a <| x = S.insert (0, a) x
+a <| x = S.insert (True, a) x
 infixr <|
 
 -- | Check if the sequent contains no F-signed formulae
