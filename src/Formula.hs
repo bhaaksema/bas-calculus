@@ -66,38 +66,3 @@ instance Show Formula where
   showsPrec _ (a :> Bot) = showChar '¬' . showsPrec 9 a
   showsPrec p (a :> b) = showParen (p > 6) $
     showsPrec 7 a . showString " → " . showsPrec 6 b
-
--- | Sign for propositional formula
-data SignedFormula = T Formula | F Formula
-  deriving (Eq, Show)
-
--- | Ord instance for SignedFormula
-instance Ord SignedFormula where
-  compare a b | a == b = EQ
-
-  compare (T Bot) _ = GT
-  compare (F Top) _ = GT
-  compare _ (T Bot) = LT
-  compare _ (F Top) = LT
-
-  compare (T (Var _)) _ = GT
-  compare (T (Var _ :> _)) _ = GT
-  compare (T (_ :& _)) _ = GT
-  compare (F (_ :| _)) _ = GT
-  compare _ (T (Var _)) = LT
-  compare _ (T (Var _ :> _)) = LT
-  compare _ (T (_ :& _)) = LT
-  compare _ (F (_ :| _)) = LT
-
-  compare (F (_ :> _)) _ = GT
-  compare _ (F (_ :> _)) = LT
-
-  compare (F (_ :& _)) _ = GT
-  compare (T (_ :| _)) _ = GT
-  compare _ (F (_ :& _)) = LT
-  compare _ (T (_ :| _)) = LT
-
-  compare (T (_ :> _)) _ = GT
-  compare _ (T (_ :> _)) = LT
-
-  compare _ _ = LT

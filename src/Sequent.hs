@@ -4,6 +4,38 @@ import qualified Data.Set as S
 
 import Formula
 
+-- | Sign for propositional formula
+data SignedFormula = T Formula | F Formula
+  deriving (Eq, Show)
+
+-- | Ord instance for SignedFormula
+instance Ord SignedFormula where
+  compare a b
+    | a == b = EQ
+    -- Linear conclusion
+    | T Bot <- a = GT
+    | F Top <- a = GT
+    | T Bot <- b = LT
+    | F Top <- b = LT
+    | T (Var _) <- a = GT
+    | T (Var _ :> _) <- a = GT
+    | T (_ :& _) <- a = GT
+    | F (_ :| _) <- a = GT
+    | T (Var _) <- b = LT
+    | T (Var _ :> _) <- b = LT
+    | T (_ :& _) <- b = LT
+    | F (_ :| _) <- b = LT
+    | F (_ :> _) <- a = GT
+    | F (_ :> _) <- b = LT
+    -- Branching conclusion
+    | F (_ :& _) <- a = GT
+    | T (_ :| _) <- a = GT
+    | F (_ :& _) <- b = LT
+    | T (_ :| _) <- b = LT
+    | T (_ :> _) <- a = GT
+    | T (_ :> _) <- b = LT
+    | otherwise = LT
+
 -- | Sequent is a ordered set of signed formulae
 type Sequent = S.Set (Bool, SignedFormula)
 
