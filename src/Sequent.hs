@@ -1,36 +1,34 @@
+{-# LANGUAGE DeriveFunctor #-}
 module Sequent where
 
-import Data.Sequence as S
+import qualified Data.Set as S
 
-import Formula
+import Formula (Formula, alter1)
 
 -- | Sign for propositional formula
-data SignedFormula = T Formula | F Formula
-  deriving (Eq, Show)
+data Sign a = T a | F a
+  deriving (Eq, Ord, Show, Functor)
 
 -- | Sequent is a ordered set of signed formulae
-type Sequent = Seq (Word, SignedFormula)
+type SequentItem = (Word, Sign Formula)
+type Sequent = S.Set SequentItem
 
 -- | Sequent with one signed formula
-singleton :: SignedFormula -> Sequent
-singleton a = a <|^ empty
+singleton :: Sign Formula -> Sequent
+singleton a = a <| S.empty
 
 -- | Inspect the sequence
-view :: Sequent -> Maybe ((Word, SignedFormula), Sequent)
-view ((a :<| x) :|> b) | fst b < fst a = Just (b, a :<| x)
-view (a :<| x) = Just (a, x)
-view Empty = Nothing
+view :: Sequent -> Maybe (SequentItem, Sequent)
+view = S.minView
 
 -- | Insert a signed formula with initial priority
-(<|^) :: SignedFormula -> Sequent -> Sequent
-a <|^ x = (0, a) :<| x
-infixr <|^
+(<|) :: Sign Formula -> Sequent -> Sequent
+(<|) a = insert (0, a)
+infixr <|
 
 -- | Insert a signed formula with provided priority
-insert :: (Word, SignedFormula) -> Sequent -> Sequent
-insert a ((b :<| x) :|> c) | fst c > fst b = (b :<| x) :|> c :|> a
-insert a (b :<| x) = a :<| b :<| x
-insert a Empty = a :<| Empty
+insert :: SequentItem -> Sequent -> Sequent
+insert = S.insert
 
 -- | Check if the sequent contains no F-signed formulae
 nullFs :: Sequent -> Bool
@@ -39,13 +37,10 @@ nullFs x = S.null $ S.filter isF x
 
 -- | Replace all F-signed formulae with one given formula
 replaceFs :: Formula -> Sequent -> Sequent
-replaceFs a x = F a <|^ S.filter isT x
+replaceFs a x = F a <| S.filter isT x
   where isT (_, T _) = True; isT _ = False
 
 -- | Substitute Sequent, reset formula priority when changed
 substi :: String -> Formula -> Sequent -> Sequent
-substi p c = substi' S.empty where
-  substi' x Empty = x
-  substi' x (a :<| y) | b <- smap (alter1 p c) (snd a) =
-    substi' (if b == snd a then x :|> a else b <|^ x) y
-    where smap f (T d) = T $ f d; smap f (F d) = F $ f d
+substi p c = S.map (\(i, a) -> let b = alter1 p c <$> a
+  in (if a == b then i else 0, b))
