@@ -1,7 +1,5 @@
 module Prover (sprove, iprove, cprove) where
 
-import Data.Sequence hiding ((:>), (<|))
-
 import Embed
 import Formula
 import Sequent
@@ -15,19 +13,19 @@ sprove ax = iprove . embed ax
 
 -- | Prove a intuitionistic theorem (m-G4ip)
 iprove :: Formula -> Bool
-iprove = prove Int . single . F . simply
+iprove = prove Int . singleton . F . simply
 
 -- | Prove a classical theorem (G3cp)
 cprove :: Formula -> Bool
-cprove = prove Cl . single . F . simply
+cprove = prove Cl . singleton . F . simply
 
 -- | Check provability depending on the logic
 prove :: Logic -> Sequent -> Bool
-prove _ Empty = False
-prove l (e :<| x) = case e of
+prove l y | Just (e, x) <- view y = case e of
   -- Initial sequents
   (0, T Bot) -> True; (0, F Top) -> True
   -- Replacement rules
+  (0, T Top) -> prove l x; (0, F Bot) -> prove l x
   (1, T (Var p)) -> prove l $ substi p Top x
   (1, T (Var p :> Bot)) -> prove l $ substi p Bot x
   -- Unary premise rules
@@ -44,5 +42,7 @@ prove l (e :<| x) = case e of
     | l == Cl || nullFs x -> all (prove Cl) [F a <|^ x, T b <|^ x]
     | not (prove l $ T b <|^ x) -> False
     | prove l $ T c <|^ T (d :> b) <|^ replaceFs d x -> True
-  -- Continue
-  (i, a) -> i < 6 && prove l (sortOn fst ((succ i, a) :<| x))
+  -- Iterate the sequent
+  (i, a) -> i < 6 && prove l (insert (succ i, a) x)
+  -- Search exhausted
+  | otherwise = False

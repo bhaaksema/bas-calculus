@@ -1,6 +1,6 @@
 module Sequent where
 
-import Data.Sequence as S hiding ((<|))
+import Data.Sequence as S
 
 import Formula
 
@@ -12,13 +12,25 @@ data SignedFormula = T Formula | F Formula
 type Sequent = Seq (Word, SignedFormula)
 
 -- | Sequent with one signed formula
-single :: SignedFormula -> Sequent
-single a = a <|^ empty
+singleton :: SignedFormula -> Sequent
+singleton a = a <|^ empty
+
+-- | Inspect the sequence
+view :: Sequent -> Maybe ((Word, SignedFormula), Sequent)
+view ((a :<| x) :|> b) | fst b < fst a = Just (b, a :<| x)
+view (a :<| x) = Just (a, x)
+view Empty = Nothing
 
 -- | Insert a signed formula with initial priority
 (<|^) :: SignedFormula -> Sequent -> Sequent
 a <|^ x = (0, a) :<| x
 infixr <|^
+
+-- | Insert a signed formula with provided priority
+insert :: (Word, SignedFormula) -> Sequent -> Sequent
+insert a ((b :<| x) :|> c) | fst c > fst b = (b :<| x) :|> c :|> a
+insert a (b :<| x) = a :<| b :<| x
+insert a Empty = a :<| Empty
 
 -- | Check if the sequent contains no F-signed formulae
 nullFs :: Sequent -> Bool
