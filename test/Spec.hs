@@ -46,5 +46,5 @@ main = do
   let rs2 = check (sprove [neg (neg b) :> b]) ((a :| neg a, True) : ctests)
   let res = rci ++ rs1 ++ rs2
   let resi = zipWith (\(f, r) i -> (show i ++ ' ' : show f, r)) res [(1 :: Int)..]
-  mapM_ (\(f, r) -> do putStr f; putStrLn (if r then " ✅" else " ⛔")) resi
+  mapM_ (\(f, r) -> do putStr f; putStrLn (if r then " ✅" else undefined " ⛔")) resi
   unless (all snd res) undefined
