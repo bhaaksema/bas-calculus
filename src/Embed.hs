@@ -10,7 +10,7 @@ vars :: Formula -> S.Set String
 vars (a :& b) = vars a `S.union` vars b
 vars (a :| b) = vars a `S.union` vars b
 vars (a :> b) = vars a `S.union` vars b
-vars (Var s)  = S.singleton s
+vars (Var p)  = S.singleton p
 vars _        = S.empty
 
 -- | Set of subformulas of a formula
@@ -30,7 +30,7 @@ type Axiom = Formula
 -- | Generalized bounding function
 bfunc :: [Axiom] -> S.Set Formula -> [Formula]
 bfunc axi as = [alter m ax | ax <- axi,
-  m <- foldr (\s -> (M.insert s <$> S.toList as <*>)) [M.empty] (vars ax)]
+  m <- foldr (\p -> (M.insert p <$> S.toList as <*>)) [M.empty] (vars ax)]
 
 -- | Embed an intermediate logic into intuitionistic logic
 embed :: [Axiom] -> Formula -> Formula
