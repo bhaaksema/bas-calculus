@@ -22,37 +22,41 @@ neg a = a :> Bot
 (<:>) a b = (a :> b) :& (b :> a)
 infix 5 <:>
 
--- | Simplify formula
+-- | Simplify formula without substitution
 simply :: Formula -> Formula
-simply = alter M.empty
+simply = fullSubsti M.empty
 
--- | Simplify and apply one substitution
-alter1 :: String -> Formula -> Formula -> Formula
-alter1 s a = alter (M.singleton s a)
+-- | Simplify and fully apply substitution map
+fullSubsti :: M.Map String Formula -> Formula -> Formula
+fullSubsti = substi True
 
--- | Simplify and apply a substitution map
-alter :: M.Map String Formula -> Formula -> Formula
-alter m (a1 :& b1)
+-- | Simplify and (partially) apply singlton substitution map
+unitSubsti :: Bool -> (String, Formula) -> Formula -> Formula
+unitSubsti t (p, a) = substi t (M.singleton p a)
+
+-- | Simplify and (partially) apply a substitution map
+substi :: Bool -> M.Map String Formula -> Formula -> Formula
+substi t m (a1 :& b1)
   | a == b || b == Top = a
   | a == Top = b
   | a == Bot || b == Bot = Bot
   | otherwise = a :& b
-  where a = alter m a1; b = alter m b1
-alter m (a1 :| b1)
+  where a = substi t m a1; b = substi t m b1
+substi t m (a1 :| b1)
   | a == b || b == Bot = a
   | a == Bot = b
   | a == Top || b == Top = Top
   | otherwise = a :| b
-  where a = alter m a1; b = alter m b1
-alter m (a1 :> b1)
+  where a = substi t m a1; b = substi t m b1
+substi True m (a1 :> b1)
   | a == b || b == Top || a == Bot = Top
   | a == Top = b
   | c :& d <- a = c :> d :> b
   | c :| d <- a = (c :> b) :& (d :> b)
   | otherwise = a :> b
-  where a = alter m a1; b = alter m b1
-alter m (Var s) | Just a <- m M.!? s = a
-alter _ a = a
+  where a = substi True m a1; b = substi True m b1
+substi _ m (Var p) | Just a <- m M.!? p = a
+substi _ _ a = a
 
 -- | Show instance for Formula
 instance Show Formula where

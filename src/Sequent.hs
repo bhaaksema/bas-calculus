@@ -3,7 +3,7 @@ module Sequent where
 
 import qualified Data.Set as S
 
-import Formula (Formula (..), alter1)
+import Formula (Formula (..), unitSubsti)
 
 -- | Sign for propositional formula
 data Sign a = T a | F a
@@ -27,20 +27,21 @@ view _ = Nothing
 
 -- | \(O(\log n)\). Insert a signed formula with label
 (+>) :: Sign Formula -> Sequent -> Sequent
-(+>) a = case a of
-  T Bot            -> const (S.singleton (0, a))
-  F Top            -> const (S.singleton (0, a))
-  T Top            -> id
-  F Bot            -> id
-  T (Var _)        -> S.insert (1, a)
-  F (Var _)        -> (<+ a)
-  T (Var _ :> Bot) -> S.insert (1, a)
-  T (b :& c)       -> (T b +>) . (T c +>)
-  F (b :| c)       -> (F b +>) . (F c +>)
-  F (_ :> _)       -> S.insert (2, a)
-  T (_ :| _)       -> S.insert (3, a)
-  F (_ :& _)       -> S.insert (3, a)
-  T (_ :> _)       -> S.insert (4, a)
+T Top +> x = x
+F Bot +> x = x
+T (a :& b) +> x = T a +> T b +> x
+F (a :| b) +> x = F a +> F b +> x
+a +> x | i <- case a of
+  T Bot            -> 0
+  F Top            -> 0
+  T (Var _)        -> 1
+  F (Var _)        -> 1
+  T (Var _ :> Bot) -> 1
+  F (_ :> _)       -> 2
+  T (_ :| _)       -> 3
+  F (_ :& _)       -> 3
+  T (_ :> _)       -> 4
+  = S.insert (i, a) x
 infixr +>
 
 -- | \(O(\log n)\). Insert a signed formula as dormant
@@ -58,7 +59,7 @@ replaceFs :: Formula -> Sequent -> Sequent
 replaceFs a x = F a +> S.filter isT x
   where isT (_, T _) = True; isT _ = False
 
--- | \(O(n \log n)\). Substitute sequent, relabels formulae when changed
-substi :: String -> Formula -> Sequent -> Sequent
-substi p c = S.foldr (\(i, a) -> let b = alter1 p c <$> a
-  in (if a == b then S.insert (i, a) else (b +>))) S.empty
+-- | \(O(n \log n)\). Substitute sequent, wakes up formulae
+mapSubsti :: Bool -> String -> Formula -> Sequent -> Sequent
+mapSubsti t p c = S.foldr (\(i, a) -> let b = unitSubsti t (p, c) <$> a in
+  S.insert (if b `elem` [T Bot, F Top] then 0 else i, b)) S.empty

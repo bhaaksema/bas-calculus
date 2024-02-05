@@ -25,8 +25,9 @@ prove l y | Just (e, x) <- view y = case e of
   -- Initial sequents
   T Bot -> True; F Top -> True
   -- Replacement rules
-  T (Var p) -> prove l (substi p Top x)
-  T (Var p :> Bot) -> prove l (substi p Bot x)
+  T (Var p) -> prove l (mapSubsti True p Top x)
+  F (Var p) -> prove l (mapSubsti False p Bot x <+ e)
+  T (Var p :> Bot) -> prove l (mapSubsti True p Bot x)
   -- Unary premise rules
   F (a :> b)
     | l == Cl || nullFs x -> prove l (T a +> F b +> x)
