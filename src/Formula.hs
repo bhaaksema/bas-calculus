@@ -51,8 +51,6 @@ substi t m (a1 :| b1)
 substi True m (a1 :> b1)
   | a == b || b == Top || a == Bot = Top
   | a == Top = b
-  | c :& d <- a = c :> d :> b
-  | c :| d <- a = (c :> b) :& (d :> b)
   | otherwise = a :> b
   where a = substi True m a1; b = substi True m b1
 substi _ m (Var p) | Just a <- m M.!? p = a

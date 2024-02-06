@@ -31,6 +31,8 @@ T Top +> x = x
 F Bot +> x = x
 T (a :& b) +> x = T a +> T b +> x
 F (a :| b) +> x = F a +> F b +> x
+T ((c :& d) :> b) +> x = F (c :> d :> b) +> x
+T ((c :| d) :> b) +> x = T (c :> b) +> T (d :> b) +> x
 a +> x | i <- case a of
   T Bot            -> 0
   F Top            -> 0

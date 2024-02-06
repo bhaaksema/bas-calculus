@@ -28,7 +28,7 @@ prove l y | Just (e, x) <- view y = case e of
   T (Var p) -> prove l (mapSubsti True p Top x)
   F (Var p) -> prove l (mapSubsti False p Bot x <+ e)
   T (Var p :> Bot) -> prove l (mapSubsti True p Bot x)
-  -- Unary premise rules
+  -- Unary premise rules (others are handled in (+>))
   F (a :> b)
     | l == Cl || nullFs x -> prove l (T a +> F b +> x)
     | prove l (T a +> replaceFs b x) -> True
