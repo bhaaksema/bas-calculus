@@ -5,51 +5,35 @@ import qualified Data.Set as S
 
 import Formula (Formula (..), unitSubsti)
 
+-- | Priority for signed formula
+data Prio = P0 | P1 | P2 | P3 | P4 | P5
+  deriving (Eq, Ord, Show, Enum, Bounded)
+
 -- | Sign for propositional formula
 data Sign a = T a | F a
   deriving (Eq, Ord, Show, Functor)
 
--- | Sequent is a set of labelled signed formulae
-type Sequent = S.Set (Int, Sign Formula)
+-- | Sequent is a set of prioritised signed formulae
+type Sequent = S.Set (Prio, Sign Formula)
 
--- | Label for dormant signed formulae
-sleep :: Int
-sleep = maxBound :: Int
-
--- | \(O(\log n)\). Sequent with one labelled signed formula
+-- | \(O(\log n)\). Sequent with one signed formula
 singleton :: Sign Formula -> Sequent
 singleton a = a +> S.empty
 
--- | \(O(\log n)\). Inspect the sequent
-view :: Sequent -> Maybe (Sign Formula, Sequent)
-view x | Just ((i, a), y) <- S.minView x, i < sleep = Just (a, y)
+-- | \(O(\log n)\). Retrieve the signed formula with first priority
+view :: Sequent -> Maybe ((Prio, Sign Formula), Sequent)
+view x | Just v <- S.minView x, fst (fst v) < maxBound = Just v
 view _ = Nothing
 
--- | \(O(\log n)\). Insert a signed formula with label
+-- | \(O(\log n)\). Insert a signed formula with initial priority
 (+>) :: Sign Formula -> Sequent -> Sequent
-T Top +> x = x
-F Bot +> x = x
-T (a :& b) +> x = T a +> T b +> x
-F (a :| b) +> x = F a +> F b +> x
-T ((c :& d) :> b) +> x = F (c :> d :> b) +> x
-T ((c :| d) :> b) +> x = T (c :> b) +> T (d :> b) +> x
-a +> x | i <- case a of
-  T Bot            -> 0
-  F Top            -> 0
-  T (Var _)        -> 1
-  F (Var _)        -> 1
-  T (Var _ :> Bot) -> 1
-  F (_ :> _)       -> 2
-  T (_ :| _)       -> 3
-  F (_ :& _)       -> 3
-  T (_ :> _)       -> 4
-  = S.insert (i, a) x
-infixr +>
+a +> x = S.insert (minBound, a) x
+infixr 4 +>
 
--- | \(O(\log n)\). Insert a signed formula as dormant
-(<+) :: Sequent -> Sign Formula -> Sequent
-x <+ a = S.insert (sleep, a) x
-infixl <+
+-- | \(O(\log n)\). Insert a signed formula with less priority
+(<+) :: Sequent -> (Prio, Sign Formula) -> Sequent
+x <+ (i, a) = S.insert (succ i, a) x
+infixl 3 <+
 
 -- | \(O(n)\). Check if the sequent contains no F-signed formulae
 nullFs :: Sequent -> Bool
@@ -61,7 +45,10 @@ replaceFs :: Formula -> Sequent -> Sequent
 replaceFs a x = F a +> S.filter isT x
   where isT (_, T _) = True; isT _ = False
 
--- | \(O(n \log n)\). Substitute sequent, wakes up formulae
+-- | \(O(n \log n)\). Substitute sequent, can reset priority
 mapSubsti :: Bool -> String -> Formula -> Sequent -> Sequent
-mapSubsti t p c = S.foldr (\(i, a) -> let b = unitSubsti t (p, c) <$> a in
-  S.insert (if b `elem` [T Bot, F Top] then 0 else i, b)) S.empty
+mapSubsti t p c = S.foldr (\(i, a) -> let b = unitSubsti t (p, c) <$> a
+  in if invertible b then (b +>) else S.insert (i, b)) S.empty where
+  invertible (F (_ :> _)) = False
+  invertible (T (_ :> _)) = False
+  invertible _            = True
