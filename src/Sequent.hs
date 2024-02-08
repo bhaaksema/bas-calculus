@@ -1,54 +1,57 @@
-{-# LANGUAGE DeriveFunctor, LambdaCase #-}
+{-# LANGUAGE DeriveFunctor #-}
 module Sequent where
 
 import qualified Data.Set as S
 
 import Formula (Formula (..), unitSubsti)
 
--- | Priority for signed formula
-data Prio = P0 | P1 | P2 | P3 | P4 | P5
-  deriving (Eq, Ord, Show, Enum, Bounded)
-
 -- | Sign for propositional formula
 data Sign a = T a | F a
   deriving (Eq, Ord, Show, Functor)
 
+-- | Priority for signed formula
+data Prio = P0 | P1 | P2 | P3 | P4 | P5
+  deriving (Eq, Ord, Show, Enum, Bounded)
+
+-- | View for sequent
+data View a = Fresh a | Stale a | Empty
+
 -- | Sequent is a set of prioritised signed formulae
-type PFormula = (Prio, Sign Formula)
-type Sequent = (S.Set PFormula, [PFormula])
+type SFormula = Sign Formula
+type Sequent = ([SFormula], S.Set (Prio, SFormula))
 
 -- | \(O(\log n)\). Sequent with one signed formula
-singleton :: Sign Formula -> Sequent
-singleton a = (S.empty, [(P0, a)])
+singleton :: SFormula -> Sequent
+singleton a = ([a], S.empty)
 
 -- | \(O(\log n)\). Retrieve the signed formula with first priority
-view :: Sequent -> Maybe (PFormula, Sequent)
-view (x, a : as) = Just (a, (x, as))
-view (x, []) | Just (a, y) <- S.minView x, fst a < maxBound = Just (a, (y, []))
-view _ = Nothing
+view :: Sequent -> View (SFormula, Sequent)
+view (a : as, x) = Fresh (a, (as, x))
+view (_, x) | Just ((i, a), y) <- S.minView x, i < maxBound = Stale (a, ([], y))
+view _ = Empty
 
--- | \(O(\log n)\). Insert a signed formula with initial priority
-(+>) :: Sign Formula -> Sequent -> Sequent
-a +> (x, as) = (x, (P0, a) : as)
+-- | \(O(\log n)\). Insert a fresh signed formula
+(+>) :: SFormula -> Sequent -> Sequent
+a +> (as, x) = (a : as, x)
 infixr 4 +>
 
--- | \(O(\log n)\). Insert a signed formula with some priority
-(<+) :: Sequent -> PFormula -> Sequent
-(x, es) <+ a = (S.insert a x, es)
-infixl 3 <+
+-- | \(O(\log n)\). Insert a scheduled formula
+(|>) :: (Prio, SFormula) -> Sequent -> Sequent
+a |> (as, x) = (as, S.insert a x)
+infixr 4 |>
 
 -- | \(O(n)\). Check if the sequent contains no F-signed formulae
 nullFs :: Sequent -> Bool
-nullFs (x, _) = S.null $ S.filter (\case (_, F _) -> True; _ -> False) x
+nullFs (_, x) = S.null $ S.filter isF x
+  where isF (_, F _) = True; isF _ = False
 
 -- | \(O(n)\). Remove all F-signed formulae
 delFs :: Sequent -> Sequent
-delFs (x, as) = (S.filter (\case (_, T _) -> True; _ -> False) x, as)
+delFs (as, x) = (as, S.filter isT x)
+  where isT (_, T _) = True; isT _ = False
 
 -- | \(O(n \log n)\). Substitute sequent, can reset priority
 mapSubsti :: Bool -> String -> Formula -> Sequent -> Sequent
-mapSubsti t p c (x, as) = S.foldr (\(i, a) -> let b = unitSubsti t (p, c) <$> a
-  in if invertible b then (b +>) else (<+ (i, b))) (S.empty, as) x where
-  invertible (F (_ :> _)) = False
-  invertible (T (_ :> _)) = False
-  invertible _            = True
+mapSubsti t p c (as, x) = S.foldr (\(i, a) -> let b = f a in
+  (if a /= b then (b +>) else ((i, b) |>))) (map f as, S.empty) x
+  where f = (unitSubsti t (p, c) <$>)
