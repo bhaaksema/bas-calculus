@@ -4,6 +4,7 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 
 import Formula
+import Utils.Formula (fullSubsti)
 
 -- | Set of variables of a formula
 vars :: Formula -> S.Set String

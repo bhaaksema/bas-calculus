@@ -1,9 +1,11 @@
 module Prover (sprove, iprove, cprove) where
 
-import Embed   (Axiom, embed)
-import Formula (Formula (..), simply)
+import qualified Data.Set as S
 
+import Embed         (Axiom, embed)
+import Formula
 import Sequent
+import Utils.Formula
 
 -- | Ruleset is based on the logic
 data Logic = Int | Cl deriving Eq
@@ -12,15 +14,15 @@ data Logic = Int | Cl deriving Eq
 sprove :: [Axiom] -> Formula -> Bool
 sprove ax = iprove . embed ax
 
--- | Prove a intuitionistic theorem (m-G4ip)
+-- | Prove a intuitionistic theorem
 iprove :: Formula -> Bool
-iprove = prove Int . (<+ empty) . F . simply
+iprove = prove Int . (<+ S.empty) . F . simply
 
--- | Prove a classical theorem (G3cp)
+-- | Prove a classical theorem
 cprove :: Formula -> Bool
-cprove = prove Cl . (<+ empty) . F . simply
+cprove = prove Cl . (<+ S.empty) . F . simply
 
--- | Schedule formulae based on proof rules
+-- | \(O(\log n)\). Schedule formulae based on proof rules
 (<+) :: Sign Formula -> Sequent -> Sequent
 (<+) a | i <- case a of
   T (Var _)        -> P1
@@ -47,9 +49,9 @@ prove l y = case view y of
     T ((c :& d) :> b) -> prove l (T (c :> d :> b) <+ x)
     T ((c :| d) :> b) -> prove l (T (c :> b) <+ T (d :> b) <+ x)
     -- Replacement rules
-    (T (Var p)) -> prove l (mapSubsti (<+) True p Top x)
-    (F (Var p)) -> prove l ((P5, e) <| mapSubsti (<+) False p Bot x)
-    (T (Var p :> Bot)) -> prove l (mapSubsti (<+) True p Bot x)
+    (T (Var p)) -> prove l (mapSubsti True p Top x)
+    (F (Var p)) -> prove l ((P5, e) <| mapSubsti False p Bot x)
+    (T (Var p :> Bot)) -> prove l (mapSubsti True p Bot x)
     -- Right implication
     (F (a :> b))
       | l == Cl || nullFs x -> prove l (T a <+ F b <+ x)
@@ -67,3 +69,9 @@ prove l y = case view y of
     a -> prove l ((P5, a) <| x)
   -- Search exhausted
   Nothing -> False
+
+-- | \(O(n \log n)\). Substitute sequent, can reset priority
+mapSubsti :: Bool -> String -> Formula -> Sequent -> Sequent
+mapSubsti t p c = S.foldr (\(i, a) -> let b = f a in
+  if a /= b then (b <+) else ((i, b) <|)) S.empty
+  where f = (unitSubsti t (p, c) <$>)
