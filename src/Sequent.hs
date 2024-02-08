@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveFunctor, LambdaCase #-}
 module Sequent where
 
 import qualified Data.Set as S
@@ -14,41 +14,41 @@ data Sign a = T a | F a
   deriving (Eq, Ord, Show, Functor)
 
 -- | Sequent is a set of prioritised signed formulae
-type Sequent = S.Set (Prio, Sign Formula)
+type PFormula = (Prio, Sign Formula)
+type Sequent = (S.Set PFormula, [PFormula])
 
 -- | \(O(\log n)\). Sequent with one signed formula
 singleton :: Sign Formula -> Sequent
-singleton a = a +> S.empty
+singleton a = (S.empty, [(P0, a)])
 
 -- | \(O(\log n)\). Retrieve the signed formula with first priority
-view :: Sequent -> Maybe ((Prio, Sign Formula), Sequent)
-view x | Just v <- S.minView x, fst (fst v) < maxBound = Just v
+view :: Sequent -> Maybe (PFormula, Sequent)
+view (x, a : as) = Just (a, (x, as))
+view (x, []) | Just (a, y) <- S.minView x, fst a < maxBound = Just (a, (y, []))
 view _ = Nothing
 
 -- | \(O(\log n)\). Insert a signed formula with initial priority
 (+>) :: Sign Formula -> Sequent -> Sequent
-a +> x = S.insert (minBound, a) x
+a +> (x, as) = (x, (P0, a) : as)
 infixr 4 +>
 
--- | \(O(\log n)\). Insert a signed formula with less priority
-(<+) :: Sequent -> (Prio, Sign Formula) -> Sequent
-x <+ (i, a) = S.insert (succ i, a) x
+-- | \(O(\log n)\). Insert a signed formula with some priority
+(<+) :: Sequent -> PFormula -> Sequent
+(x, es) <+ a = (S.insert a x, es)
 infixl 3 <+
 
 -- | \(O(n)\). Check if the sequent contains no F-signed formulae
 nullFs :: Sequent -> Bool
-nullFs x = S.null $ S.filter isF x
-  where isF (_, F _) = True; isF _ = False
+nullFs (x, _) = S.null $ S.filter (\case (_, F _) -> True; _ -> False) x
 
--- | \(O(n)\). Replace all F-signed formulae with one given formula
-replaceFs :: Formula -> Sequent -> Sequent
-replaceFs a x = F a +> S.filter isT x
-  where isT (_, T _) = True; isT _ = False
+-- | \(O(n)\). Remove all F-signed formulae
+delFs :: Sequent -> Sequent
+delFs (x, as) = (S.filter (\case (_, T _) -> True; _ -> False) x, as)
 
 -- | \(O(n \log n)\). Substitute sequent, can reset priority
 mapSubsti :: Bool -> String -> Formula -> Sequent -> Sequent
-mapSubsti t p c = S.foldr (\(i, a) -> let b = unitSubsti t (p, c) <$> a
-  in if invertible b then (b +>) else S.insert (i, b)) S.empty where
+mapSubsti t p c (x, as) = S.foldr (\(i, a) -> let b = unitSubsti t (p, c) <$> a
+  in if invertible b then (b +>) else (<+ (i, b))) (S.empty, as) x where
   invertible (F (_ :> _)) = False
   invertible (T (_ :> _)) = False
   invertible _            = True

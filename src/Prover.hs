@@ -2,6 +2,7 @@ module Prover (sprove, iprove, cprove) where
 
 import Embed   (Axiom, embed)
 import Formula (Formula (..), simply)
+
 import Sequent
 
 -- | Ruleset is based on the logic
@@ -21,32 +22,44 @@ cprove = prove Cl . singleton . F . simply
 
 -- | Check provability depending on the logic
 prove :: Logic -> Sequent -> Bool
-prove l y | Just (e, x) <- view y = case e of
-  -- Initial sequents
-  (P0, T Bot) -> True; (P0, F Top) -> True
+prove l y
+  -- Resolve initial priority formulae
+  | Just ((P0, e), x) <- view y = case e of
+  T Bot -> True; F Top -> True
   -- Unary premise rules
-  (P0, T (a :& b)) -> prove l (T a +> T b +> x)
-  (P0, F (a :| b)) -> prove l (F a +> F b +> x)
-  (P0, T ((c :& d) :> b)) -> prove l (T (c :> d :> b) +> x)
-  (P0, T ((c :| d) :> b)) -> prove l (T (c :> b) +> T (d :> b) +> x)
+  T Top -> prove l x; F Bot -> prove l x
+  T (a :& b) -> prove l (T a +> T b +> x)
+  F (a :| b) -> prove l (F a +> F b +> x)
+  T ((c :& d) :> b) -> prove l (T (c :> d :> b) +> x)
+  T ((c :| d) :> b) -> prove l (T (c :> b) +> T (d :> b) +> x)
+  -- Priority schedule other formulae
+  T (Var _) -> prove l (x <+ (P1, e))
+  F (Var _) -> prove l (x <+ (P1, e))
+  T (Var _ :> Bot) -> prove l (x <+ (P1, e))
+  F (_ :> _) -> prove l (x <+ (P2, e))
+  F (_ :& _) -> prove l (x <+ (P3, e))
+  T (_ :| _) -> prove l (x <+ (P3, e))
+  T (_ :> _) -> prove l (x <+ (P4, e))
+  -- Resolve priority scheduled formulae
+  | Just ((_, e), x) <- view y = case e of
   -- Replacement rules
-  (P0, T Top) -> prove l x; (P0, F Bot) -> prove l x
-  (P1, T (Var p)) -> prove l (mapSubsti True p Top x)
-  (P1, F (Var p)) -> prove l (mapSubsti False p Bot x <+ e)
-  (P1, T (Var p :> Bot)) -> prove l (mapSubsti True p Bot x)
+  (T (Var p)) -> prove l (mapSubsti True p Top x)
+  (F (Var p)) -> prove l (mapSubsti False p Bot x <+ (P5, e))
+  (T (Var p :> Bot)) -> prove l (mapSubsti True p Bot x)
   -- Right implication
-  (P2, F (a :> b)) -> any (prove l) $ if l == Cl || nullFs x
-    then [T a +> F b +> x] else [T a +> replaceFs b x, x <+ e]
+  (F (a :> b))
+    | l == Cl || nullFs x -> prove l (T a +> F b +> x)
+    | prove l (T a +> F b +> delFs x) -> True
   -- Right conjunction
-  (P3, F (a :& b)) -> all (prove l) [F a +> x, F b +> x]
+  (F (a :& b)) -> all (prove l) [F a +> x, F b +> x]
   -- Left disjunction
-  (P3, T (a :| b)) -> all (prove l) [T a +> x, T b +> F a +> x]
+  (T (a :| b)) -> all (prove l) [T a +> x, T b +> F a +> x]
   -- Left implication
-  (P4, T (a@(c :> d) :> b)) -> prove l (T b +> x) &&
-    if l == Cl || nullFs x then prove Cl (F a +> F b +> x)
-    else prove l (T c +> T (d :> b) +> replaceFs d x)
-      || prove l (F a +> F b +> x <+ e)
-  -- Update priority
-  _ -> prove l (x <+ e)
+  (T (a :> b))
+    | l == Cl || nullFs x -> all (prove Cl) [T b +> x, F a +> F b +> x]
+    | (c :> d) <- a -> all (any (prove l)) [[T b +> x],
+      [T c +> T (d :> b) +> F d +> delFs x, F a +> F b +> x <+ (P5, e)]]
+  -- Backtracking
+  a -> prove l (x <+ (P5, a))
   -- Search exhausted
   | otherwise = False
