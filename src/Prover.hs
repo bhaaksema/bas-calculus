@@ -4,6 +4,10 @@ import Embed
 import Formula
 import Sequent
 
+-- | Prove a classical theorem
+cprove :: Formula -> Bool
+cprove = iprove . neg . neg
+
 -- | Prove a superintuitionistic theorem
 sprove :: [Axiom] -> Formula -> Bool
 sprove ax = iprove . embed ax
@@ -11,10 +15,6 @@ sprove ax = iprove . embed ax
 -- | Prove a intuitionistic theorem
 iprove :: Formula -> Bool
 iprove = prove . singleton . F . simply
-
--- | Prove a classical theorem
-cprove :: Formula -> Bool
-cprove = prove . singleton . F . simply . neg . neg
 
 -- | Check provability of the set
 prove :: Sequent -> Bool
