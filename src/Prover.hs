@@ -1,14 +1,8 @@
 module Prover (sprove, iprove, cprove) where
 
-import qualified Data.Set as S
-
-import Embed         (Axiom, embed)
+import Embed
 import Formula
 import Sequent
-import Utils.Formula
-
--- | Ruleset is based on the logic
-data Logic = Int | Cl deriving Eq
 
 -- | Prove a superintuitionistic theorem
 sprove :: [Axiom] -> Formula -> Bool
@@ -16,62 +10,41 @@ sprove ax = iprove . embed ax
 
 -- | Prove a intuitionistic theorem
 iprove :: Formula -> Bool
-iprove = prove Int . (<+ S.empty) . F . simply
+iprove = prove . singleton . F . simply
 
 -- | Prove a classical theorem
 cprove :: Formula -> Bool
-cprove = prove Cl . (<+ S.empty) . F . simply
+cprove = prove . singleton . F . simply . neg . neg
 
--- | \(O(\log n)\). Schedule formulae based on proof rules
-(<+) :: Sign Formula -> Sequent -> Sequent
-(<+) a | i <- case a of
-  T (Var _)        -> P1
-  F (Var _)        -> P1
-  T (Var _ :> Bot) -> P1
-  F (_ :> _)       -> P2
-  F (_ :& _)       -> P3
-  T (_ :| _)       -> P3
-  T (_ :> _)       -> P4
-  _                -> P0
-  = ((i, a) <|)
-infixr 4 <+
-
--- | Check provability depending on the logic
-prove :: Logic -> Sequent -> Bool
-prove l y = case view y of
-  Just (e, x) -> case e of
-    -- Initial sequents
-    T Bot -> True; F Top -> True
-    -- Unary premise rules
-    T Top -> prove l x; F Bot -> prove l x
-    T (a :& b) -> prove l (T a <+ T b <+ x)
-    F (a :| b) -> prove l (F a <+ F b <+ x)
-    T ((c :& d) :> b) -> prove l (T (c :> d :> b) <+ x)
-    T ((c :| d) :> b) -> prove l (T (c :> b) <+ T (d :> b) <+ x)
-    -- Replacement rules
-    (T (Var p)) -> prove l (mapSubsti True p Top x)
-    (F (Var p)) -> prove l ((P5, e) <| mapSubsti False p Bot x)
-    (T (Var p :> Bot)) -> prove l (mapSubsti True p Bot x)
-    -- Right implication
-    (F (a :> b))
-      | l == Cl || nullFs x -> prove l (T a <+ F b <+ x)
-      | prove l (T a <+ F b <+ delFs x) -> True
-    -- Right conjunction
-    (F (a :& b)) -> all (prove l) [F a <+ x, F b <+ x]
-    -- Left disjunction
-    (T (a :| b)) -> all (prove l) [T a <+ x, T b <+ F a <+ x]
-    -- Left implication
-    (T (a :> b))
-      | l == Cl || nullFs x -> all (prove Cl) [T b <+ x, F a <+ F b <+ x]
-      | (c :> d) <- a -> all (any (prove l)) [[T b <+ x],
-        [T c <+ T (d :> b) <+ F d <+ delFs x, F a <+ F b <+ (P5, e) <| x]]
-    -- Backtracking
-    a -> prove l ((P5, a) <| x)
+-- | Check provability of the set
+prove :: Sequent -> Bool
+prove y | Just (e, x) <- view y = case e of
+  -- Contradictory
+  (P0, T Bot) -> True; (P0, F Top) -> True
+  -- Unary consequence rules
+  (P0, T (a :& b)) -> prove (T a <+ T b <+ x)
+  (P0, F (a :| b)) -> prove (F a <+ F b <+ x)
+  (P0, T ((c :& d) :> b)) -> prove (T (c :> d :> b) <+ x)
+  (P0, T ((c :| d) :> b)) -> prove (T (c :> b) <+ T (d :> b) <+ x)
+  -- Replacement rules
+  (P0, T Top) -> prove x; (P0, F Bot) -> prove x
+  (P1, T (Var p)) -> prove (mapSubsti True p Top x)
+  (P1, F (Var p)) -> prove (e <| mapSubsti False p Bot x)
+  (P1, T (Var p :> Bot)) -> prove (mapSubsti True p Bot x)
+  -- Right implication
+  (P2, F (a :> b))
+    | nullFs x -> prove (T a <+ F b <+ x)
+    | prove (T a <+ F b <+ delFs x) -> True
+  -- Right conjunction
+  (P3, F (a :& b)) -> all prove [F a <+ x, F b <+ x]
+  -- Left disjunction
+  (P3, T (a :| b)) -> all prove [T a <+ x, T b <+ F a <+ x]
+  -- Left implication
+  (P4, T (a :> b))
+    | not (prove (T b <+ x)) -> False
+    | (c :> d) <- a, prove (T c <+ T (d :> b) <+ F d <+ delFs x) -> True
+    | otherwise -> prove (F a <+ F b <+ e <| x)
+  -- Update priority
+  _ -> prove (e <| x)
   -- Search exhausted
-  Nothing -> False
-
--- | \(O(n \log n)\). Substitute sequent, can reset priority
-mapSubsti :: Bool -> String -> Formula -> Sequent -> Sequent
-mapSubsti t p c = S.foldr (\(i, a) -> let b = f a in
-  if a /= b then (b <+) else ((i, b) <|)) S.empty
-  where f = (unitSubsti t (p, c) <$>)
+  | otherwise = False

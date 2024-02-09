@@ -1,5 +1,6 @@
-{-# LANGUAGE DeriveFunctor #-}
 module Formula where
+
+import qualified Data.Map as M
 
 -- | Propositional formula
 data Formula = Bot | Top
@@ -21,11 +22,45 @@ neg a = a :> Bot
 (<:>) a b = (a :> b) :& (b :> a)
 infix 5 <:>
 
+-- | Simplify formula without substitution
+simply :: Formula -> Formula
+simply = fullSubsti M.empty
+
+-- | Simplify and fully apply substitution map
+fullSubsti :: M.Map String Formula -> Formula -> Formula
+fullSubsti = substi True
+
+-- | Simplify and (partially) apply singlton substitution map
+unitSubsti :: Bool -> (String, Formula) -> Formula -> Formula
+unitSubsti t (p, a) = substi t (M.singleton p a)
+
+-- | Simplify and (partially) apply a substitution map
+substi :: Bool -> M.Map String Formula -> Formula -> Formula
+substi _ m (Var p) | Just a <- m M.!? p = a
+substi t m (a1 :& b1)
+  | a == b || b == Top = a
+  | a == Top = b
+  | a == Bot || b == Bot = Bot
+  | otherwise = a :& b
+  where a = substi t m a1; b = substi t m b1
+substi t m (a1 :| b1)
+  | a == b || b == Bot = a
+  | a == Bot = b
+  | a == Top || b == Top = Top
+  | otherwise = a :| b
+  where a = substi t m a1; b = substi t m b1
+substi t@True m (a1 :> b1)
+  | a == b || b == Top || a == Bot = Top
+  | a == Top = b
+  | otherwise = a :> b
+  where a = substi t m a1; b = substi t m b1
+substi _ _ a = a
+
 -- | Show instance for Formula
 instance Show Formula where
-  showsPrec _ (Var s) = showString s
   showsPrec _ Bot = showChar '⊥'
   showsPrec _ Top = showChar '⊤'
+  showsPrec _ (Var s) = showString s
   showsPrec p (a :& b) = showParen (p > 8) $
     showsPrec 8 a . showString " ∧ " . showsPrec 8 b
   showsPrec p (a :| b) = showParen (p > 7) $
@@ -33,15 +68,3 @@ instance Show Formula where
   showsPrec _ (a :> Bot) = showChar '¬' . showsPrec 9 a
   showsPrec p (a :> b) = showParen (p > 6) $
     showsPrec 7 a . showString " → " . showsPrec 6 b
-
--- | Sign for propositional formula
-data Sign a = T a | F a
-  deriving (Eq, Ord, Show, Functor)
-
--- | \(O(1)\). Check if the sign is T
-isT :: Sign a -> Bool
-isT (T _) = True; isT _ = False
-
--- | \(O(1)\). Check if the sign is F
-isF :: Sign a -> Bool
-isF (F _) = True; isF _ = False

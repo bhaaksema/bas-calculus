@@ -1,7 +1,6 @@
 # Haskell Sequent Calculus Theorem Prover
 
-- Based on the sequent calculi m-G4ip $(Int)$ and G3cp $(Cl)$.
-- m-G4ip switches to G3cp when the succedent is $\{\bot\}$.
+- Based on a mix of the sequent calculi m-G4ip and intuitionistic tableau calculus.
 - The second premise of the $(L\lor)$ rule uses information from the first (as proposed by Weich).
 - Once a variable $p$ or $\neg p$ is added to the antecedent, the sequent is substituted with $[\top/p]$ or $[\bot/p]$ respectively.
 - Formulae are reduced with boolean simplification rules before proof attempt and during substitutions.

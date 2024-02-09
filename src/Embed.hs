@@ -4,14 +4,13 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 
 import Formula
-import Utils.Formula (fullSubsti)
 
 -- | Set of variables of a formula
 vars :: Formula -> S.Set String
+vars (Var p)  = S.singleton p
 vars (a :& b) = vars a `S.union` vars b
 vars (a :| b) = vars a `S.union` vars b
 vars (a :> b) = vars a `S.union` vars b
-vars (Var p)  = S.singleton p
 vars _        = S.empty
 
 -- | Set of subformulas of a formula
