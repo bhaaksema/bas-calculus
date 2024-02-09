@@ -22,7 +22,7 @@ fors a        = S.singleton a
 
 -- | Set of conjunctions of subformulas of a formula
 cons :: Formula -> S.Set Formula
-cons = S.map (foldl1 (:&)) . S.delete S.empty . S.powerSet . fors
+cons = S.map (foldl1 (:&)) . S.deleteMin . S.powerSet . fors
 
 -- | Axiom is kind of a formula
 type Axiom = Formula

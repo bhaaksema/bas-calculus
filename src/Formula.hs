@@ -49,11 +49,11 @@ substi t m (a1 :| b1)
   | a == Top || b == Top = Top
   | otherwise = a :| b
   where a = substi t m a1; b = substi t m b1
-substi t@True m (a1 :> b1)
+substi True m (a1 :> b1)
   | a == b || b == Top || a == Bot = Top
   | a == Top = b
   | otherwise = a :> b
-  where a = substi t m a1; b = substi t m b1
+  where a = fullSubsti m a1; b = fullSubsti m b1
 substi _ _ a = a
 
 -- | Show instance for Formula
