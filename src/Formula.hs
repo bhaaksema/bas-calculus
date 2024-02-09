@@ -60,7 +60,7 @@ substi _ _ a = a
 instance Show Formula where
   showsPrec _ Bot = showChar '⊥'
   showsPrec _ Top = showChar '⊤'
-  showsPrec _ (Var s) = showString s
+  showsPrec _ (Var p) = showString p
   showsPrec p (a :& b) = showParen (p > 8) $
     showsPrec 8 a . showString " ∧ " . showsPrec 8 b
   showsPrec p (a :| b) = showParen (p > 7) $

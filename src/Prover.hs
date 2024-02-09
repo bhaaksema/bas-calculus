@@ -22,29 +22,24 @@ prove y | Just (e, x) <- view y = case e of
   -- Contradictory
   (P0, T Bot) -> True; (P0, F Top) -> True
   -- Unary consequence rules
-  (P0, T (a :& b)) -> prove (T a <+ T b <+ x)
-  (P0, F (a :| b)) -> prove (F a <+ F b <+ x)
-  (P0, T ((c :& d) :> b)) -> prove (T (c :> d :> b) <+ x)
-  (P0, T ((c :| d) :> b)) -> prove (T (c :> b) <+ T (d :> b) <+ x)
+  (P0, T (a :& b)) -> prove (T a <| T b <| x)
+  (P0, F (a :| b)) -> prove (F a <| F b <| x)
+  (P0, T ((c :& d) :> b)) -> prove (T (c :> d :> b) <| x)
+  (P0, T ((c :| d) :> b)) -> prove (T (c :> b) <| T (d :> b) <| x)
   -- Replacement rules
-  (P0, T Top) -> prove x; (P0, F Bot) -> prove x
   (P1, T (Var p)) -> prove (mapSubsti True p Top x)
-  (P1, F (Var p)) -> prove (e <| mapSubsti False p Bot x)
+  (P1, F (Var p)) -> prove (e <+ mapSubsti False p Bot x)
   (P1, T (Var p :> Bot)) -> prove (mapSubsti True p Bot x)
   -- Right implication
-  (P2, F (a :> b))
-    | nullFs x -> prove (T a <+ F b <+ x)
-    | prove (T a <+ F b <+ delFs x) -> True
+  (P2, F (a :> b)) | prove (T a <| F b <| delFs x) -> True
   -- Right conjunction
-  (P3, F (a :& b)) -> all prove [F a <+ x, F b <+ x]
+  (P3, F (a :& b)) -> all prove [F a <| x, F b <| x]
   -- Left disjunction
-  (P3, T (a :| b)) -> all prove [T a <+ x, T b <+ F a <+ x]
+  (P3, T (a :| b)) -> all prove [T a <| x, T b <| F a <| x]
   -- Left implication
-  (P4, T (a :> b))
-    | not (prove (T b <+ x)) -> False
-    | (c :> d) <- a, prove (T c <+ T (d :> b) <+ F d <+ delFs x) -> True
-    | otherwise -> prove (F a <+ F b <+ e <| x)
+  (P4, T ((c :> d) :> b))
+    | prove (T c <| T (d :> b) <| F d <| delFs x) -> prove (T b <| x)
   -- Update priority
-  _ -> prove (e <| x)
+  a -> prove (a <+ x)
   -- Search exhausted
   | otherwise = False
