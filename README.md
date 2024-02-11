@@ -1,4 +1,4 @@
-# Haskell Sequent Calculus Theorem Prover
+# Haskell Tableaux-based Prover for Superintuitionistic Logics
 
 - Based on a mix of the sequent calculi m-G4ip and intuitionistic tableau calculus.
 - The second premise of the $(L\lor)$ rule uses information from the first (as proposed by Weich).
