@@ -1,6 +1,5 @@
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 module Main (main) where
-
-import Control.Monad (unless)
 
 import Formula
 import Prover
@@ -44,7 +43,5 @@ main = do
   let rci = check cprove ctests ++ check iprove itests
   let rs1 = check (sprove [neg a :| a]) ((neg (neg b) :> b, True) : ctests)
   let rs2 = check (sprove [neg (neg b) :> b]) ((a :| neg a, True) : ctests)
-  let res = rci ++ rs1 ++ rs2
-  let resi = zipWith (\(f, r) i -> (show i ++ ' ' : show f, r)) res [(1 :: Int)..]
-  mapM_ (\(f, r) -> do putStr f; putStrLn (if r then " ✅" else undefined " ⛔")) resi
-  unless (all snd res) undefined
+  let res = zip (rci ++ rs1 ++ rs2) [(1::Int)..]
+  mapM_ (\((f, True), i) -> do putStrLn (show i ++ ' ' : show f)) res
