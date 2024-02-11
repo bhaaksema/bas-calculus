@@ -1,9 +1,9 @@
 cabal-version:   2.4
-name:            hseq
+name:            stab
 version:         0.3.4.2
-synopsis:        Haskell Sequent Calculus Theorem Prover
-homepage:        https://github.com/bhaaksema/hseq-prover
-bug-reports:     https://github.com/bhaaksema/hseq-prover/issues
+synopsis:        Haskell Tableaux-based Prover for Superintuitionistic Logics
+homepage:        https://github.com/bhaaksema/stab-prover
+bug-reports:     https://github.com/bhaaksema/stab-prover/issues
 license:         GPL-3.0-or-later
 license-file:    LICENSE
 author:          bhaaksema
