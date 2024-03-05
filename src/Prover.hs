@@ -35,7 +35,7 @@ prove y | Just (e, x) <- view y = case e of
   -- Right conjunction
   (P3, F (a :& b)) -> all prove [F a <| x, F b <| x]
   -- Left disjunction
-  (P3, T (a :| b)) -> all prove [T a <| x, T b <| F a <| x]
+  (P3, T (a :| b)) -> all prove [T a <| x, T b <| x]
   -- Left implication
   (P4, T ((c :> d) :> b))
     | prove (T c <| T (d :> b) <| F d <| delFs x) -> prove (T b <| x)
