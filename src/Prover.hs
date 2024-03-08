@@ -19,7 +19,7 @@ iprove = prove . singleton . F . simply
 -- | Check provability of the set
 prove :: Sequent -> Bool
 prove y | Just (e, x) <- view y = case e of
-  -- Contradictory
+  -- Contradictory leaf
   (P0, T Bot) -> True; (P0, F Top) -> True
   -- Unary consequence rules
   (P0, T (a :& b)) -> prove (T a <| T b <| x)

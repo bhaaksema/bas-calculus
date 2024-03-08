@@ -9,8 +9,8 @@ data Formula = Bot | Top
   | Formula :| Formula
   | Formula :> Formula
   deriving (Eq, Ord)
-infix 8 :&
-infix 7 :|
+infixl 8 :&
+infixl 7 :|
 infixr 6 :>
 
 -- | Negation of formula
@@ -34,7 +34,8 @@ fullSubsti = substi True
 unitSubsti :: Bool -> (String, Formula) -> Formula -> Formula
 unitSubsti t (p, a) = substi t (M.singleton p a)
 
--- | Simplify and (partially) apply a substitution map
+-- | Apply boolean simplification rules
+-- and (partially) apply a substitution map
 substi :: Bool -> M.Map String Formula -> Formula -> Formula
 substi _ m (Var p) | Just a <- m M.!? p = a
 substi t m (a1 :& b1)
