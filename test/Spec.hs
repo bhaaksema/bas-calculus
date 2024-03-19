@@ -1,47 +1,54 @@
-{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 module Main (main) where
 
 import Formula
 import Prover
+import Control.Monad (unless)
 
-a :: Formula; b :: Formula; c :: Formula
-(a, b, c) = (Var "a", Var "b", Var "c")
+p :: Formula; q :: Formula; r :: Formula;
+(p, q, r) = (Var "p", Var "q", Var "r")
 
 itests :: [(Formula, Bool)]
 itests =
   [ (Bot, False)
   , (Top, True)
-  , (a :> a, True)
-  , (a :> b :> a, True) -- left-weakening axiom
-  , ((a :> a :> b) :> a :> b, True) -- contraction axiom
-  , ((a :> b :> c) :> b :> a :> c, True) -- exchange axiom
-  , (Bot :> a, True)
-  , ((a :> b) :> (c :> a) :> c :> b, True)
-  , (neg (neg a) :> a, False) -- law of double negation
-  , (neg a :| a, False) -- law of excluded middle
+  , (p :> p, True)
+  , (p :> q :> p, True) -- left-weakening axiom
+  , ((p :> p :> q) :> p :> q, True) -- contraction axiom
+  , ((p :> q :> r) :> q :> p :> r, True) -- exchange axiom
+  , (Bot :> p, True)
+  , ((p :> q) :> (r :> p) :> r :> q, True)
+  , (neg (neg p) :> p, False) -- law of double negation
+  , (neg p :| p, False) -- law of excluded middle
   -- disjunction axioms
-  , ((a :> c) :> (b :> c) :> a :| b :> c, True)
-  , (a :> (a :| b), True)
-  , (b :> (a :| b), True)
+  , ((p :> r) :> (q :> r) :> p :| q :> r, True)
+  , (p :> (p :| q), True)
+  , (q :> (p :| q), True)
   -- conjunction axioms
-  , ((c :> a) :> (c :> b) :> c :> a :& b, True)
-  , (a :& b :> a, True)
-  , (a :& b :> b, True)
+  , ((r :> p) :> (r :> q) :> r :> p :& q, True)
+  , (p :& q :> p, True)
+  , (p :& q :> q, True)
   -- Łukasiewicz's axioms
-  , ((a :> b :> c) :> (a :> b) :> a :> c, True)
-  , (neg a :> neg b <:> b :> a, False)
-  , (neg (neg (a :| neg a)), True) -- Ono exercise 1.13
-  , (neg a :| neg b :> neg (a :& b), True) -- Ono example 1.8
+  , ((p :> q :> r) :> (p :> q) :> p :> r, True)
+  , (neg p :> neg q <:> q :> p, False)
+  -- Ono example 1.8
+  , (neg p :| neg q :> neg (p :& q), True)
+  -- Ono exercise 1.13
+  , (neg (neg (p :| neg p)), True)
+  -- Principia Mathematica 2.15
+  , ((neg p :> q) <:> (neg q :> p), False)
+  -- Principia Mathematica 2.85
+  , (((p :| q) :> (p :| r)) :> (p :| (q :> r)), False)
   ]
 
 check :: (Formula -> Bool) -> [(Formula, Bool)] -> [(Formula, Bool)]
-check p = map (\(f, e) -> (f, p f == e))
+check g = map (\(f, e) -> (f, g f == e))
 
 main :: IO ()
 main = do
   let ctests = head itests : map (\(x, _) -> (x, True)) (tail itests)
   let rci = check cprove ctests ++ check iprove itests
-  let rs1 = check (sprove [neg a :| a]) ((neg (neg b) :> b, True) : ctests)
-  let rs2 = check (sprove [neg (neg b) :> b]) ((a :| neg a, True) : ctests)
+  let rs1 = check (sprove [neg p :| p]) ctests
+  let rs2 = check (sprove [neg (neg p) :> p]) ctests
   let res = zip (rci ++ rs1 ++ rs2) [(1::Int)..]
-  mapM_ (\((f, True), i) -> do putStrLn (show i ++ ' ' : show f)) res
+  mapM_ (\((f, _), i) -> do putStrLn (show i ++ ' ' : show f)) res
+  unless (all (snd . fst) res) undefined
