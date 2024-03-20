@@ -12,19 +12,30 @@ category:        Logic
 extra-doc-files: README.md
 
 common shared-props
-    ghc-options:      -Wall
-    build-depends:    base ^>=4.17.2.1, containers ^>=0.6.7
-    default-language: Haskell2010
+  ghc-options:      -Wall
+  build-depends:
+    base ^>=4.17.2.1,
+    containers ^>=0.6.7,
+    megaparsec ^>=9.3.1,
+    text ^>=2.0.2,
+    parser-combinators ^>=1.3.0
+  default-language: Haskell2010
+
+executable stab
+  import:           shared-props
+  main-is:          Main.hs
+  hs-source-dirs:   app
+  build-depends:    stab
 
 library
-    import:           shared-props
-    exposed-modules:  Formula, Prover
-    other-modules:    Embed, Sequent
-    hs-source-dirs:   src
+  import:           shared-props
+  exposed-modules:  Formula, Parser, Prover
+  other-modules:    Embed, Sequent
+  hs-source-dirs:   src
 
-test-suite hseq-test
-    import:           shared-props
-    type:             exitcode-stdio-1.0
-    hs-source-dirs:   test
-    main-is:          Spec.hs
-    build-depends:    stab
+test-suite stab-test
+  import:           shared-props
+  type:             exitcode-stdio-1.0
+  hs-source-dirs:   test
+  main-is:          Spec.hs
+  build-depends:    stab

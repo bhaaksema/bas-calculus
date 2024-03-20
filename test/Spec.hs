@@ -1,10 +1,13 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
-import Formula
-import Prover
 import Control.Monad (unless)
+import Data.Either   (fromRight)
+import Formula
+import Parser        (parse)
+import Prover
 
-p :: Formula; q :: Formula; r :: Formula;
+p, q, r :: Formula
 (p, q, r) = (Var "p", Var "q", Var "r")
 
 itests :: [(Formula, Bool)]
@@ -46,9 +49,10 @@ check g = map (\(f, e) -> (f, g f == e))
 main :: IO ()
 main = do
   let ctests = head itests : map (\(x, _) -> (x, True)) (tail itests)
-  let rci = check cprove ctests ++ check iprove itests
-  let rs1 = check (sprove [neg p :| p]) ctests
-  let rs2 = check (sprove [neg (neg p) :> p]) ctests
-  let res = zip (rci ++ rs1 ++ rs2) [(1::Int)..]
-  mapM_ (\((f, _), i) -> do putStrLn (show i ++ ' ' : show f)) res
-  unless (all (snd . fst) res) undefined
+  let res = check cprove ctests
+         ++ check iprove itests
+         ++ check (sprove [neg p :| p]) ctests
+  let idx_res = zip res [(1::Int)..]
+  mapM_ (\((f, _), i) -> do putStrLn (show i ++ ' ' : show f)) idx_res
+  unless (all (snd . fst) idx_res) undefined
+  print (fromRight Bot (parse "p => p"))
