@@ -1,0 +1,2 @@
+% Theorem
+p => p
