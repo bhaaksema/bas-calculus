@@ -1,15 +1,25 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
-import Formula (Formula)
-import Parser  (parse)
-import Prover  (iprove)
+import Data.Text             (isInfixOf)
+import Data.Text.IO          (readFile)
+import Prelude               hiding (readFile)
+import System.Environment    (getArgs)
+import Text.Megaparsec.Error (errorBundlePretty)
 
-msg :: Either a Formula -> String
-msg (Right f) = show f ++ '\n' : show (iprove f)
-msg (Left _)  = "No well-formed formula"
+import Parser (parse)
+import Prover (iprove)
 
 main :: IO ()
 main = do
-  let a = parse "Main.hs" "$false => p"
-  putStrLn $ msg a
+  args <- getArgs
+  let fileName = head args
+  file <- readFile fileName
+  let expect = not $ "Non-Theorem" `isInfixOf` file
+  let parseResult = parse fileName file
+  putStrLn $ case parseResult of
+    Left e -> errorBundlePretty e
+    Right formula | result <- iprove formula
+      -> show formula
+      ++ '\n' : (if result then "Theorem" else "Non-Theorem")
+      ++ ' '  : (if expect == result then "✅" else "⛔")
