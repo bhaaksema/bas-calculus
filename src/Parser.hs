@@ -25,7 +25,7 @@ symbol = L.symbol sc
 
 pVariable :: Parser Formula
 pVariable = Var <$> lexeme
-  ((:) <$> letterChar <*> many alphaNumChar <?> "variable")
+  (some (alphaNumChar <|> char '_') <?> "variable")
 
 pConstant :: Parser Formula
 pConstant = choice

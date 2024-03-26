@@ -11,8 +11,8 @@ main :: IO ()
 main = do
   args <- getArgs
   let fileName = head args
+  putStrLn fileName
   file <- T.readFile fileName
   let formula = parse fileName file
   let result = iprove formula
-  putStrLn $ show formula ++ '\n' : if
-    result then "Theorem" else "Non-Theorem"
+  putStrLn $ if result then "Valid" else "Invalid"
