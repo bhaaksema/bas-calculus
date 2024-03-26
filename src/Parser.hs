@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-
 module Parser where
 
 import           Control.Monad.Combinators.Expr
@@ -63,5 +62,7 @@ pLogicFormula :: Parser Formula
 pLogicFormula = makeExprParser pUnitaryFormula operatorTable
 
 -- | TPTP Syntax based parser: https://tptp.org/TPTP/SyntaxBNF.html
-parse :: String -> Text -> Either (ParseErrorBundle Text Void) Formula
-parse = runParser (sc *> pLogicFormula <* eof)
+parse :: String -> Text -> Formula
+parse file input = case runParser (sc *> pLogicFormula <* eof) file input of
+  Left  e -> error $ errorBundlePretty e
+  Right f -> f
