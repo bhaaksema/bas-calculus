@@ -6,7 +6,7 @@ import Data.Text        (Text)
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Formula
+import Formula (Formula)
 import Parser  (parse)
 import Prover
 
