@@ -1,2 +1,0 @@
-% Theorem
-p => p

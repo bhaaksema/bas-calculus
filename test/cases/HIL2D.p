@@ -1,2 +1,0 @@
-% Theorem
-$false => p

@@ -1,6 +1,6 @@
-cabal-version:   2.4
+cabal-version:   2.2
 name:            super
-version:         0.3.4.2
+version:         0.3.5.1
 synopsis:        Haskell Tableaux-based Prover for Superintuitionistic Logics
 homepage:        https://github.com/bhaaksema/super-prover
 bug-reports:     https://github.com/bhaaksema/super-prover/issues
@@ -14,7 +14,7 @@ extra-doc-files: README.md
 common shared-props
   ghc-options:      -Wall
   build-depends:
-    base ^>=4.17.2.1,
+    base ^>=4.17.2,
     containers ^>=0.6.7,
     megaparsec ^>=9.3.1,
     text ^>=2.0.2,
@@ -38,4 +38,7 @@ test-suite super-test
   type:             exitcode-stdio-1.0
   hs-source-dirs:   test
   main-is:          Spec.hs
-  build-depends:    super
+  build-depends:
+    super,
+    tasty ^>=1.4.3,
+    tasty-hunit ^>=0.10.1
