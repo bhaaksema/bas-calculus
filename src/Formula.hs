@@ -4,7 +4,7 @@ import qualified Data.Map as M
 
 -- | Propositional formula
 data Formula = Bot | Top
-  | Var String
+  | Var Int
   | Formula :& Formula
   | Formula :| Formula
   | Formula :> Formula
@@ -22,21 +22,34 @@ neg a = a :> Bot
 (<:>) a b = (a :> b) :& (b :> a)
 infix 5 <:>
 
+-- | Typeclass for getting fresh variables
+class Fresh a where
+  fresh :: a -> Formula
+
+-- | Fresh instance for Formula
+instance Fresh Formula where
+  fresh Bot = Var 0
+  fresh Top = Var 0
+  fresh (Var p) = Var (p + 1)
+  fresh (a :& b) = max (fresh a) (fresh b)
+  fresh (a :| b) = max (fresh a) (fresh b)
+  fresh (a :> b) = max (fresh a) (fresh b)
+
 -- | Simplify formula without substitution
 simply :: Formula -> Formula
 simply = fullSubsti M.empty
 
 -- | Simplify and fully apply substitution map
-fullSubsti :: M.Map String Formula -> Formula -> Formula
+fullSubsti :: M.Map Int Formula -> Formula -> Formula
 fullSubsti = substi True
 
 -- | Simplify and (partially) apply singlton substitution map
-unitSubsti :: Bool -> (String, Formula) -> Formula -> Formula
+unitSubsti :: Bool -> (Int, Formula) -> Formula -> Formula
 unitSubsti t (p, a) = substi t (M.singleton p a)
 
 -- | Apply boolean simplification rules
 -- and (partially) apply a substitution map
-substi :: Bool -> M.Map String Formula -> Formula -> Formula
+substi :: Bool -> M.Map Int Formula -> Formula -> Formula
 substi _ m (Var p) | Just a <- m M.!? p = a
 substi t m (a1 :& b1)
   | a == b || b == Top = a
@@ -61,7 +74,7 @@ substi _ _ a = a
 instance Show Formula where
   showsPrec _ Bot = showChar '⊥'
   showsPrec _ Top = showChar '⊤'
-  showsPrec _ (Var p) = showString p
+  showsPrec _ (Var p) = showString (show p)
   showsPrec p (a :& b) = showParen (p > 8) $
     showsPrec 8 a . showString " ∧ " . showsPrec 8 b
   showsPrec p (a :| b) = showParen (p > 7) $

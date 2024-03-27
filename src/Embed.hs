@@ -6,7 +6,7 @@ import qualified Data.Set as S
 import Formula
 
 -- | Set of variables of a formula
-vars :: Formula -> S.Set String
+vars :: Formula -> S.Set Int
 vars (Var p)  = S.singleton p
 vars (a :& b) = vars a `S.union` vars b
 vars (a :| b) = vars a `S.union` vars b

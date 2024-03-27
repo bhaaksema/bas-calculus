@@ -18,14 +18,16 @@ iprove = prove . singleton . F . simply
 
 -- | Check provability of the set
 prove :: Sequent -> Bool
-prove y | Just (e, x) <- view y = case e of
+prove z | Just (e, x) <- view z = case e of
   -- Contradictory leaf
   (P0, T Bot) -> True; (P0, F Top) -> True
   -- Unary consequence rules
   (P0, T (a :& b)) -> prove (T a <| T b <| x)
   (P0, F (a :| b)) -> prove (F a <| F b <| x)
   (P0, T ((c :& d) :> b)) -> prove (T (c :> d :> b) <| x)
-  (P0, T ((c :| d) :> b)) -> prove (T (c :> b) <| T (d :> b) <| x)
+  (P0, T ((c :| d) :> b))
+    | (p, y) <- freshVar x
+    -> prove (T (c :> p) <| T (d :> p) <| T (p :> b) <| y)
   -- Replacement rules
   (P1, T (Var p)) -> prove (mapSubsti True p Top x)
   (P1, F (Var p)) -> prove (e <+ mapSubsti False p Bot x)
@@ -38,7 +40,9 @@ prove y | Just (e, x) <- view y = case e of
   (P3, T (a :| b)) -> all prove [T a <| x, T b <| x]
   -- Left implication
   (P4, T ((c :> d) :> b))
-    | prove (T c <| T (d :> b) <| F d <| delFs x) -> prove (T b <| x)
+    | (p, y) <- freshVar x
+    , prove (T c <| T (d :> p) <| T (p :> b) <| F p <| delFs y)
+    -> prove (T b <| y)
   -- Update priority
   a -> prove (a <+ x)
   -- Search exhausted

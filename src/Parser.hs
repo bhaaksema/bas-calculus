@@ -2,15 +2,17 @@
 module Parser where
 
 import           Control.Monad.Combinators.Expr
+import           Control.Monad.State
+import qualified Data.Map                       as M
 import           Data.Text                      (Text)
 import           Data.Void                      (Void)
-import           Text.Megaparsec
+import           Text.Megaparsec                hiding (State)
 import           Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer     as L
 
 import Formula
 
-type Parser = Parsec Void Text
+type Parser = ParsecT Void Text (State (M.Map String Int))
 
 sc :: Parser ()
 sc = L.space space1
@@ -24,8 +26,19 @@ symbol :: Text -> Parser Text
 symbol = L.symbol sc
 
 pVariable :: Parser Formula
-pVariable = Var <$> lexeme
-  (some (alphaNumChar <|> char '_') <?> "variable")
+pVariable = do
+  -- Parse variable name
+  name <- lexeme (some (alphaNumChar <|> char '_') <?> "variable")
+  -- Get current state
+  variables <- lift get
+  -- Check if variable is already in state
+  case M.lookup name variables of
+    Just index -> return (Var index)
+    Nothing    -> do
+      let index = M.size variables
+      -- Update state with new variable
+      lift $ put $ M.insert name index variables
+      return (Var index)
 
 pConstant :: Parser Formula
 pConstant = choice
@@ -63,6 +76,8 @@ pLogicFormula = makeExprParser pUnitaryFormula operatorTable
 
 -- | TPTP Syntax based parser: https://tptp.org/TPTP/SyntaxBNF.html
 parse :: String -> Text -> Formula
-parse file input = case runParser (sc *> pLogicFormula <* eof) file input of
+parse file input
+  | result <- evalState (runParserT (sc *> pLogicFormula <* eof) file input) M.empty
+  = case result of
   Left  e -> error $ errorBundlePretty e
   Right f -> f
