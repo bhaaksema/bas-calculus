@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveFunctor #-}
-module Sequent where
+module State where
 
 import           Control.Monad.State
 import qualified Data.Set            as S

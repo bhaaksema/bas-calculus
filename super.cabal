@@ -1,6 +1,6 @@
 cabal-version:   2.2
 name:            super
-version:         0.3.5.1
+version:         0.3.6
 synopsis:        Haskell Tableaux-based Prover for Superintuitionistic Logics
 homepage:        https://github.com/bhaaksema/super-prover
 bug-reports:     https://github.com/bhaaksema/super-prover/issues
@@ -31,7 +31,7 @@ executable super
 library
   import:           shared-props
   exposed-modules:  Formula, Parser, Prover
-  other-modules:    Embed, Sequent
+  other-modules:    Embed, State
   hs-source-dirs:   src
 
 test-suite super-test

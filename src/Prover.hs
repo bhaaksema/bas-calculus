@@ -4,7 +4,7 @@ import Control.Monad.State
 
 import Embed
 import Formula
-import Sequent
+import State
 
 -- | Prove a classical theorem
 cprove :: Formula -> Bool
