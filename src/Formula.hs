@@ -22,18 +22,14 @@ neg a = a :> Bot
 (<:>) a b = (a :> b) :& (b :> a)
 infix 5 <:>
 
--- | Typeclass for getting fresh variables
-class Fresh a where
-  fresh :: a -> Formula
-
--- | Fresh instance for Formula
-instance Fresh Formula where
-  fresh Bot = Var 0
-  fresh Top = Var 0
-  fresh (Var p) = Var (p + 1)
-  fresh (a :& b) = max (fresh a) (fresh b)
-  fresh (a :| b) = max (fresh a) (fresh b)
-  fresh (a :> b) = max (fresh a) (fresh b)
+-- | Gets a fresh variable for a formula
+fresh :: Formula -> Formula
+fresh Bot = Var 0
+fresh Top = Var 0
+fresh (Var p) = Var (p + 1)
+fresh (a :& b) = max (fresh a) (fresh b)
+fresh (a :| b) = max (fresh a) (fresh b)
+fresh (a :> b) = max (fresh a) (fresh b)
 
 -- | Simplify formula without substitution
 simply :: Formula -> Formula

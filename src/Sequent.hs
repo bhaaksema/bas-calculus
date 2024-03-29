@@ -1,7 +1,8 @@
 {-# LANGUAGE DeriveFunctor #-}
 module Sequent where
 
-import qualified Data.Set as S
+import           Control.Monad.State
+import qualified Data.Set            as S
 
 import Formula
 
@@ -13,43 +14,50 @@ data Prio = P0 | P1 | P2 | P3 | P4 | PMAX
 data Sign a = T a | F a
   deriving (Eq, Ord, Show, Functor)
 
--- | Fresh instance for Sign
-instance Fresh a => Fresh (Sign a) where
-  fresh (T a) = fresh a
-  fresh (F a) = fresh a
-
 -- | Sequent is a set of labelled formulae
 type LabelFormula = (Prio, Sign Formula)
-type Sequent = (Formula, S.Set LabelFormula)
+type Sequent = (S.Set LabelFormula)
+type ProverState = (Formula, Sequent)
 
--- | Fresh variable from Sequent
-freshVar :: Sequent -> (Formula, Sequent)
-freshVar (p, x) = (p, (fresh p, x))
+-- | \(O(1)\). Get a fresh variable
+freshVar :: State ProverState Formula
+freshVar = get >>= \(p, x) -> do
+  let q = fresh p
+  put (q, x) >> return q
 
--- | \(O(1)\). Sequent with one initial label formula
-singleton :: Sign Formula -> Sequent
-singleton a = (fresh a, S.singleton (minBound, a))
+-- | \(O(1)\). Get the sequent
+getSet :: State ProverState Sequent
+getSet = get >>= \(_, x) -> return x
+
+-- | \(O(1)\). Set the sequent
+putSet :: Sequent -> State ProverState ()
+putSet x = get >>= \(p, _) -> put (p, x)
+
+-- | \(O(1)\). State with one initial label formula
+singletonF :: Formula -> ProverState
+singletonF a = (a, S.singleton (minBound, F a))
 
 -- | \(O(\log n)\). Retrieve the formula with smallest label
-view :: Sequent -> Maybe (LabelFormula, Sequent)
-view (p, x) | Just (a, y) <- S.minView x, fst a < maxBound = Just (a, (p, y))
-view _ = Nothing
+view :: State ProverState LabelFormula
+view = getSet >>= \x -> case S.minView x of
+  Just (f, y) -> putSet y >> return f
+  _           -> return (maxBound, undefined)
 
 -- | \(O(\log n)\). Insert a signed formula with smallest label
-(<|) :: Sign Formula -> Sequent -> Sequent
-a <| (p, x) = (p, S.insert (minBound, a) x)
-infixr <|
+add :: Sign Formula -> State ProverState ()
+add a = getSet >>= putSet . S.insert (minBound, a)
 
 -- | \(O(\log n)\). Insert a formula with its label incremented
-(<+) :: LabelFormula -> Sequent -> Sequent
-(i, a) <+ (p, x) = (p, S.insert (succ i, a) x)
-infixr <+
+inc :: LabelFormula -> State ProverState ()
+inc (i, a) = getSet >>= \x -> putSet $ S.insert (succ i, a) x
 
 -- | \(O(n)\). Remove all F-signed formulae
-delFs :: Sequent -> Sequent
-delFs (p, x) = (p, S.filter isT x) where isT (_, T _) = True; isT _ = False
+delFs :: State ProverState ()
+delFs = getSet >>= \x -> putSet (S.filter isT x)
+  where isT (_, T _) = True; isT _ = False
 
 -- | \(O(n \log n)\). Substitute sequent, can reset priority
-mapSubsti :: Bool -> Int -> Formula -> Sequent -> Sequent
-mapSubsti t q c (p, x) = (p, S.map (lmap $ unitSubsti t (q, c)) x) where
+mapSubsti :: Bool -> Int -> Formula -> State ProverState ()
+mapSubsti t q c = getSet >>= \x ->
+  putSet $ S.map (lmap $ unitSubsti t (q, c)) x where
   lmap f (i, a) | b <- f <$> a = (if a == b then i else minBound, b)
