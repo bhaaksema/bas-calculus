@@ -1,7 +1,7 @@
 cabal-version:   2.2
 name:            super
-version:         0.3.6
-synopsis:        Haskell Tableaux-based Prover for Superintuitionistic Logics
+version:         0.3.7
+synopsis:        Prover for Superintuitionistic Logics in Haskell
 homepage:        https://github.com/bhaaksema/super-prover
 bug-reports:     https://github.com/bhaaksema/super-prover/issues
 license:         GPL-3.0-or-later

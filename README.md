@@ -1,4 +1,4 @@
-# Haskell Tableaux-based Prover for Superintuitionistic Logics
+# Prover for Superintuitionistic Logics in Haskell
 
 - Based on a mix of the sequent calculi m-G4ip and intuitionistic tableau calculus.
 - Once a variable $p$ or $\neg p$ is added to the antecedent, the sequent is substituted with $[\top/p]$ or $[\bot/p]$ respectively.
