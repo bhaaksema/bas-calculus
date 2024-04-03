@@ -27,18 +27,13 @@ symbol = L.symbol sc
 
 pVariable :: Parser Formula
 pVariable = do
-  -- Parse variable name
   name <- lexeme (some (alphaNumChar <|> char '_') <?> "variable")
-  -- Get current state
-  variables <- lift get
-  -- Check if variable is already in state
-  case M.lookup name variables of
-    Just index -> return (Var index)
-    Nothing    -> do
-      let index = M.size variables
-      -- Update state with new variable
-      lift $ put $ M.insert name index variables
-      return (Var index)
+  vars <- get
+  -- Check if variable is in the state
+  let idx = M.findWithDefault (M.size vars) name vars
+  -- Update state with new variable
+  put (M.insert name idx vars)
+  return (Var idx)
 
 pConstant :: Parser Formula
 pConstant = choice

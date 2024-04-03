@@ -1,6 +1,7 @@
 module Prover (sprove, iprove, cprove) where
 
 import Control.Monad.State
+import GHC.Conc
 
 import Embed
 import Formula
@@ -16,55 +17,51 @@ sprove ax = iprove . embed ax
 
 -- | Prove a intuitionistic theorem
 iprove :: Formula -> Bool
-iprove = evalState prove . singletonF . simply
+iprove = evalState prove . newState . simply
 
 -- | Check provability
 prove :: State ProverState Bool
-prove = view >>= \f -> case f of
+prove = view >>= \h -> case h of
   -- Contradictory leaf
   (L0, T, Bot) -> return True
   (L0, F, Top) -> return True
   -- Replacement rules
-  (L1, T, Var p) -> mapSubsti True p Top >> prove
-  (L1, F, Var p) -> mapSubsti False p Bot >> inc f >> prove
-  (L1, T, Var p :> Bot) -> mapSubsti True p Bot >> prove
+  (L0, T, Top) -> prove
+  (L0, F, Bot) -> prove
+  (L1, T, Var p) -> subst True p Top >> prove
+  (L1, F, Var p) -> subst False p Bot >> inc h >> prove
+  (L1, T, (Var p) :> Bot) -> subst True p Bot >> prove
   -- Unary consequence rules
   (L2, T, a :& b) -> addT a >> addT b >> prove
   (L2, F, a :| b) -> addF a >> addF b >> prove
-  (L2, T, (c :& d) :> b) -> addT (c :> d :> b) >> prove
-  (L2, T, (c :| d) :> b) -> freshV >>= \p ->
-    addT (c :> p) >> addT (d :> p) >> addT (p :> b) >> prove
+  (L2, T, (a :& b) :> c) -> addT (a :> b :> c) >> prove
+  (L2, T, (a :| b) :> c) -> freshV >>= \p ->
+    addT (a :> p) >> addT (b :> p) >> addT (p :> c) >> prove
   -- Binary consequence rules
   (L3, F, a :& b) -> do
     x <- get
     resA <- addF a >> prove
-    put x
-    resB <- addF b >> prove
-    return (resA && resB)
+    resB <- put x >> addF b >> prove
+    return (resA `par` resB `pseq` resA && resB)
   (L3, T, a :| b) -> do
     x <- get
     resA <- addT a >> prove
-    put x
-    resB <- addT b >> prove
-    return (resA && resB)
-  (L3, F, a :> b) -> do
+    resB <- put x >> addT b >> prove
+    return (resA `par` resB `pseq` resA && resB)
+  (L4, F, a :> b) -> do
     x <- get
     resA <- addT a >> setF b >> prove
-    put x
-    resB <- inc f >> prove
-    return (resA || resB)
+    resB <- put x >> inc h >> prove
+    return (resA `par` resB `pseq` resA || resB)
   -- Ternary consequence rules
-  (L4, T, (c :> d) :> b) -> do
+  (L5, T, (a :> b) :> c) -> do
     x <- get
-    p <- freshV
-    addT c; addT (d :> b); addT (p :> b)
-    resA <- setF p >> prove
-    put x
-    resB <- addT b >> prove
-    put x
-    resC <- inc f >> prove
+    resA <- addT a >> freshV >>= \p ->
+      addT (b :> p) >> addT (p :> c) >> setF p >> prove
+    resB <- put x >> addT c >> prove
+    resC <- put x >> inc h >> prove
     return (if resA then resB else resC)
   -- Update priority
-  (i, _, _) | i < maxBound -> inc f >> prove
+  (i, _, _) | i < maxBound -> inc h >> prove
   -- Search exhausted
   _ -> return False

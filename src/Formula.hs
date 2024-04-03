@@ -1,6 +1,6 @@
 module Formula where
 
-import qualified Data.Map as M
+import qualified Data.IntMap as M
 
 -- | Propositional formula
 data Formula = Bot | Top
@@ -24,9 +24,9 @@ infix 5 <:>
 
 -- | Gets a fresh variable for a formula
 fresh :: Formula -> Formula
-fresh Bot = Var 0
-fresh Top = Var 0
-fresh (Var p) = Var (p + 1)
+fresh Bot      = Var 0
+fresh Top      = Var 0
+fresh (Var p)  = Var (p + 1)
 fresh (a :& b) = max (fresh a) (fresh b)
 fresh (a :| b) = max (fresh a) (fresh b)
 fresh (a :> b) = max (fresh a) (fresh b)
@@ -36,17 +36,17 @@ simply :: Formula -> Formula
 simply = fullSubsti M.empty
 
 -- | Simplify and fully apply substitution map
-fullSubsti :: M.Map Int Formula -> Formula -> Formula
+fullSubsti :: M.IntMap Formula -> Formula -> Formula
 fullSubsti = substi True
 
 -- | Simplify and (partially) apply singlton substitution map
 unitSubsti :: Bool -> (Int, Formula) -> Formula -> Formula
-unitSubsti t (p, a) = substi t (M.singleton p a)
+unitSubsti t (p, f) = substi t (M.singleton p f)
 
 -- | Apply boolean simplification rules
 -- and (partially) apply a substitution map
-substi :: Bool -> M.Map Int Formula -> Formula -> Formula
-substi _ m (Var p) | Just a <- m M.!? p = a
+substi :: Bool -> M.IntMap Formula -> Formula -> Formula
+substi _ m (Var p) | Just f <- m M.!? p = f
 substi t m (a1 :& b1)
   | a == b || b == Top = a
   | a == Top = b

@@ -1,7 +1,7 @@
 module Embed (Axiom, embed) where
 
-import qualified Data.Map as M
-import qualified Data.Set as S
+import qualified Data.IntMap as M
+import qualified Data.Set    as S
 
 import Formula
 
@@ -34,4 +34,4 @@ bfunc axi as = [fullSubsti m ax | ax <- axi,
 
 -- | Embed an intermediate logic into intuitionistic logic
 embed :: [Axiom] -> Formula -> Formula
-embed axi a = foldl (:&) Top (bfunc axi (cons a)) :> a
+embed axi f = foldl (:&) Top (bfunc axi (cons f)) :> f

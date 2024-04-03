@@ -6,7 +6,7 @@ import qualified Data.Set            as S
 import Formula
 
 -- | Label for formula
-data Label = L0 | L1 | L2 | L3 | L4 | LMAX
+data Label = L0 | L1 | L2 | L3 | L4 | L5 | LMAX
   deriving (Eq, Ord, Show, Enum, Bounded)
 
 -- | Sign for formula
@@ -32,8 +32,8 @@ putSet :: FormulaSet -> State ProverState ()
 putSet x = gets fst >>= \p -> put (p, x)
 
 -- | \(O(1)\). State with one initial label formula
-singletonF :: Formula -> ProverState
-singletonF a = (a, S.singleton (minBound, F, a))
+newState :: Formula -> ProverState
+newState f = (f, S.singleton (minBound, F, f))
 
 -- | \(O(\log n)\). Retrieve the formula with smallest label
 view :: State ProverState SignedFormula
@@ -43,7 +43,7 @@ view = gets snd >>= \x -> case S.minView x of
 
 -- | \(O(\log n)\). Insert a signed formula with smallest label
 add :: SignedFormula -> State ProverState ()
-add f = modifySet (S.insert f)
+add h = modifySet (S.insert h)
 
 -- | \(O(\log n)\). Add a T-signed formula
 addT :: Formula -> State ProverState ()
@@ -57,12 +57,13 @@ addF f = add (minBound, F, f)
 inc :: SignedFormula -> State ProverState ()
 inc (i, s, f) = add (succ i, s, f)
 
--- | \(O(n)\). Remove all F-signed formulae
+-- | \(O(n)\). Replace the F-signed formulae
 setF :: Formula -> State ProverState ()
-setF f = modifySet (S.filter isT) >> addF f where
-  isT (_, T, _) = True; isT _ = False
+setF f = modifySet (S.filter isT) >> addF f
+  where isT = (/= F) . (\(_, s, _) -> s)
 
 -- | \(O(n \log n)\). Substitute set, can reset label
-mapSubsti :: Bool -> Int -> Formula -> State ProverState ()
-mapSubsti t q c = modifySet (S.map $ lmap $ unitSubsti t (q, c)) where
-  lmap f (i, s, a) | b <- f a = (if a == b then i else minBound, s, b)
+subst :: Bool -> Int -> Formula -> State ProverState ()
+subst t p f = modifySet (S.map (\(i, s, a) ->
+  let b = unitSubsti t (p, f) a
+  in (if a == b then i else minBound, s, b)))
