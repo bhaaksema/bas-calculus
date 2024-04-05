@@ -3,6 +3,7 @@ module Parser where
 
 import           Control.Monad.Combinators.Expr
 import           Control.Monad.State
+import           Data.List                      (partition)
 import qualified Data.Map                       as M
 import           Data.Text                      (Text)
 import           Data.Void                      (Void)
@@ -46,7 +47,7 @@ parens = between (symbol "(") (symbol ")")
 
 pUnitaryFormula :: Parser Formula
 pUnitaryFormula = choice
-  [ parens pLogicFormula
+  [ parens pFOFFormula
   , pConstant
   , pVariable
   ]
@@ -66,13 +67,50 @@ operatorTable =
   , [ binary "<=>" (<:>) ]
   ]
 
-pLogicFormula :: Parser Formula
-pLogicFormula = makeExprParser pUnitaryFormula operatorTable
+-- | Parse FOF formula
+pFOFFormula :: Parser Formula
+pFOFFormula = makeExprParser pUnitaryFormula operatorTable
+
+-- | Ignore FOF names
+pFOFName :: Parser ()
+pFOFName = void (takeWhile1P (Just "name") (/= ','))
+
+-- | Parse FOF role
+pFOFRole :: Parser Bool
+pFOFRole = choice
+  [ False <$ symbol "axiom"
+  , True <$ symbol "conjecture"
+  ]
+
+-- | Parse annotated FOF
+pFOF :: Parser (Bool, Formula)
+pFOF = do
+  symbol "fof" *> symbol "(" *> pFOFName <* symbol ","
+  goal <- pFOFRole <* symbol ","
+  formula <- pFOFFormula <* symbol ")" <* symbol "."
+  return (goal, formula)
+
+-- | Parse TPTP file
+pTPTP :: Parser Formula
+pTPTP = do
+  fs <- sc *> some pFOF <* eof
+  let (goals, facts) = partition fst fs
+  let combine = foldr1 (:&) . map snd
+  let goal = if null goals then Top else combine goals
+  return (if null facts then goal else combine facts :> goal)
 
 -- | TPTP Syntax based parser: https://tptp.org/TPTP/SyntaxBNF.html
-parse :: String -> Text -> Formula
-parse file input
-  | result <- evalState (runParserT (sc *> pLogicFormula <* eof) file input) M.empty
-  = case result of
-  Left  e -> error $ errorBundlePretty e
-  Right f -> f
+parseFile :: String -> Text -> Formula
+parseFile file input =
+  let output = runParserT pTPTP file input
+  in case evalState output M.empty of
+    Left e  -> error $ errorBundlePretty e
+    Right f -> f
+
+-- TODO: merge parseFile and parseFormula
+parseFormula :: Text -> (Formula, M.Map String Int)
+parseFormula input =
+  let output = runParserT pFOFFormula "" input
+  in case runState output M.empty of
+    (Left e, _)  -> error $ errorBundlePretty e
+    (Right f, m) -> (f, m)
