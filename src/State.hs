@@ -67,3 +67,7 @@ subst :: Bool -> Int -> Formula -> State ProverState ()
 subst t p f = modifySet (S.map (\(i, s, a) ->
   let b = unitSubsti t (p, f) a
   in (if a == b then i else minBound, s, b)))
+
+-- Temporary solution for implication
+reset :: State ProverState ()
+reset = modifySet (S.map (\(_, s, a) -> (minBound, s, a)))
