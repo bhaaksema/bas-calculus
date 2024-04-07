@@ -32,7 +32,7 @@ executable super
 library
   import:           shared-props
   exposed-modules:  Formula, Parser, Prover
-  other-modules:    Embed, State
+  other-modules:    Prover.Classic, Embed, State
   hs-source-dirs:   src
   build-depends:
     containers ^>=0.6.7,

@@ -48,20 +48,20 @@ unitSubsti t (p, f) = substi t (M.singleton p f)
 substi :: Bool -> M.IntMap Formula -> Formula -> Formula
 substi _ m (Var p) | Just f <- m M.!? p = f
 substi t m (a1 :& b1)
-  | a == b || b == Top = a
   | a == Top = b
   | a == Bot || b == Bot = Bot
+  | b == Top || a == b = a
   | otherwise = a :& b
   where a = substi t m a1; b = substi t m b1
 substi t m (a1 :| b1)
-  | a == b || b == Bot = a
   | a == Bot = b
   | a == Top || b == Top = Top
+  | b == Bot || a == b = a
   | otherwise = a :| b
   where a = substi t m a1; b = substi t m b1
 substi True m (a1 :> b1)
-  | a == b || b == Top || a == Bot = Top
   | a == Top = b
+  | a == Bot || b == Top || a == b = Top
   | otherwise = a :> b
   where a = fullSubsti m a1; b = fullSubsti m b1
 substi _ _ a = a

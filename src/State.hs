@@ -6,7 +6,7 @@ import qualified Data.Set            as S
 import Formula
 
 -- | Label for formula
-data Label = L0 | L1 | L2 | L3 | L4 | L5 | LMAX
+data Label = L0 | L1 | L2 | L3 | LOCK
   deriving (Eq, Ord, Show, Enum, Bounded)
 
 -- | Sign for formula
@@ -54,8 +54,12 @@ addF :: Formula -> State ProverState ()
 addF f = add (minBound, F, f)
 
 -- | \(O(\log n)\). Insert a formula with incremented label
-inc :: SignedFormula -> State ProverState ()
-inc (i, s, f) = add (succ i, s, f)
+next :: SignedFormula -> State ProverState ()
+next (i, s, f) = add (succ i, s, f)
+
+-- | \(O(\log n)\). Insert a formula with locked label
+lock :: SignedFormula -> State ProverState ()
+lock (_, f, s) = add (maxBound, f, s)
 
 -- | \(O(n)\). Replace the F-signed formulae
 setF :: Formula -> State ProverState ()
@@ -71,3 +75,6 @@ subst t p f = modifySet (S.map (\(i, s, a) ->
 -- Temporary solution for implication
 reset :: State ProverState ()
 reset = modifySet (S.map (\(_, s, a) -> (minBound, s, a)))
+
+countFs :: State ProverState Int
+countFs = gets ((S.size . S.filter (\(_, s, _) -> s == F)) . snd)
