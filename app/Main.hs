@@ -4,8 +4,8 @@ module Main where
 import qualified Data.Text.IO       as T
 import           System.Environment (getArgs)
 
-import Parser (parseFile)
-import Prover (iprove)
+import Parser           (parseFile)
+import Prover.Intuition (iprove)
 
 main :: IO ()
 main = do

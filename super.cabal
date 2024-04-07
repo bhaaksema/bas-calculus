@@ -31,8 +31,14 @@ executable super
 
 library
   import:           shared-props
-  exposed-modules:  Formula, Parser, Prover
-  other-modules:    Prover.Classic, Embed, State
+  exposed-modules:
+    Embed,
+    Formula,
+    Parser,
+    Prover.Classic,
+    Prover.Intuition,
+    Prover.Super
+  other-modules:    State
   hs-source-dirs:   src
   build-depends:
     containers ^>=0.6.7,

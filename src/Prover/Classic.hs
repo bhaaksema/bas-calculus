@@ -16,10 +16,10 @@ prove = view >>= \h -> case h of
   (L0, T, Bot) -> return True
   (L0, F, Top) -> return True
   -- Replacement rules
-  (L1, T, Top) -> prove
-  (L1, F, Bot) -> prove
+  (L0, T, Top) -> prove
+  (L0, F, Bot) -> prove
   (L1, T, Var p) -> subst True p Top >> prove
-  (L1, F, Var p) -> subst True p Bot >> lock h >> prove
+  (L1, F, Var p) -> subst True p Bot >> prove
   (L1, T, (Var p) :> Bot) -> subst True p Bot >> prove
   (L1, F, (Var p) :> Bot) -> subst True p Top >> prove
   -- Unary consequence rules

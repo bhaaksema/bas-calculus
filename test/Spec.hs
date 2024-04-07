@@ -8,8 +8,8 @@ import           System.Directory
 import           Test.Tasty
 import           Test.Tasty.HUnit
 
-import Parser (parseFile)
-import Prover
+import Parser           (parseFile)
+import Prover.Intuition
 
 -- | Create a problem test case
 testProblem :: FilePath -> IO TestTree
