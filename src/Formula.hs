@@ -47,23 +47,26 @@ unitSubsti t (p, f) = substi t (M.singleton p f)
 -- and (partially) apply a substitution map
 substi :: Bool -> M.IntMap Formula -> Formula -> Formula
 substi _ m (Var p) | Just f <- m M.!? p = f
-substi t m (a1 :& b1)
-  | a == Top = b
-  | a == Bot || b == Bot = Bot
-  | b == Top || a == b = a
-  | otherwise = a :& b
-  where a = substi t m a1; b = substi t m b1
-substi t m (a1 :| b1)
-  | a == Bot = b
-  | a == Top || b == Top = Top
-  | b == Bot || a == b = a
-  | otherwise = a :| b
-  where a = substi t m a1; b = substi t m b1
-substi True m (a1 :> b1)
-  | a == Top = b
-  | a == Bot || b == Top || a == b = Top
-  | otherwise = a :> b
-  where a = fullSubsti m a1; b = fullSubsti m b1
+substi t m (a1 :& b1) = case
+  (substi t m a1, substi t m b1) of
+    (Bot, _) -> Bot
+    (_, Bot) -> Bot
+    (Top, b) -> b
+    (a, Top) -> a
+    (a, b)   -> a :& b
+substi t m (a1 :| b1) = case
+  (substi t m a1, substi t m b1) of
+    (Bot, b) -> b
+    (a, Bot) -> a
+    (Top, _) -> Top
+    (_, Top) -> Top
+    (a, b)   -> a :| b
+substi True m (a1 :> b1) = case
+  (fullSubsti m a1, fullSubsti m b1) of
+    (Bot, _) -> Top
+    (Top, b) -> b
+    (_, Top) -> Top
+    (a, b)   -> a :> b
 substi _ _ a = a
 
 -- | Show instance for Formula

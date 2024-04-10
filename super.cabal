@@ -24,7 +24,7 @@ executable super
   hs-source-dirs:   app
   build-depends:    super
   ghc-options:
-    -O3
+    -O2
     -threaded
     -rtsopts
     -with-rtsopts=-N
@@ -38,7 +38,7 @@ library
     Prover.Classic,
     Prover.Intuition,
     Prover.Super
-  other-modules:    State
+  other-modules:    Sequent
   hs-source-dirs:   src
   build-depends:
     containers ^>=0.6.7,
