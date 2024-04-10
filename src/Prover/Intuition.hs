@@ -9,33 +9,33 @@ iprove :: Formula -> Bool
 iprove = (\f -> prove f (singleton f)) . simply
 
 -- | Check provability
-prove :: Formula -> FormulaSet -> Bool
-prove p x = let (f, y) = view x in case f of
+prove :: Formula -> Sequent -> Bool
+prove p x = let (s, (i, f), y) = view x in case (i, s, f) of
   -- Initial sequents
-  (L0, T, Bot) -> True; (L0, F, Top) -> True
+  (L0, L, Bot) -> True; (L0, R, Top) -> True
   -- Replacement rules
-  (L0, T, Top) -> prove p y
-  (L0, F, Bot) -> if nullFs y
+  (L0, L, Top) -> prove p y
+  (L0, R, Bot) -> if nullR y
     then C.prove (unlock y) else prove p y
-  (L1, T, Var q) -> prove p (subst True q Top y)
-  (L1, F, Var q) -> prove p (f `lock` subst False q Bot y)
-  (L1, T, (Var q) :> Bot) -> prove p (subst True q Bot y)
+  (L1, L, Var q) -> prove p (subst True q Top y)
+  (L1, R, Var q) -> prove p (lock s (i, f) $ subst False q Bot y)
+  (L1, L, (Var q) :> Bot) -> prove p (subst True q Bot y)
   -- Unary premise rules
-  (L2, T, a :& b) -> prove p (a `addT` b `addT` y)
-  (L2, F, a :| b) -> prove p (a `addF` b `addF` y)
-  (L2, T, (a :& b) :> c) -> prove p (a :> b :> c `addT` y)
-  (L2, T, (a :| b) :> c) -> let q = fresh p in
-    prove q (a :> q `addT` b :> q `addT` q :> c `addT` y)
+  (L2, L, a :& b) -> prove p (a `addL` b `addL` y)
+  (L2, R, a :| b) -> prove p (a `addR` b `addR` y)
+  (L2, L, (a :& b) :> c) -> prove p (a :> b :> c `addL` y)
+  (L2, L, (a :| b) :> c) -> let q = fresh p in
+    prove q (a :> q `addL` b :> q `addL` q :> c `addL` y)
   -- Binary premise rules
-  (L3, F, a :& b) -> all (prove p) [a `addF` y, b `addF` y]
-  (L3, T, a :| b) -> all (prove p) [a `addT` y, b `addT` y]
-  (L3, F, a :> b) -> any (prove p) [a `addT` b `setF` y, f `lock` y]
+  (L3, R, a :& b) -> all (prove p) [a `addR` y, b `addR` y]
+  (L3, L, a :| b) -> all (prove p) [a `addL` y, b `addL` y]
+  (L3, R, a :> b) -> any (prove p) [a `addL` b `setR` y, lock s (i, f) y]
   -- Ternary premise rules
-  (L4, T, (a :> b) :> c) -> let q = fresh p in
-    if prove q (a `addT` b :> q `addT` q :> c `addT` q `setF` unlock y)
-    then all (\pr -> pr (c `addT` unlock y)) [C.prove, prove p]
-    else prove p (f `lock` y)
+  (L4, L, (a :> b) :> c) -> let q = fresh p in
+    if prove q (a `addL` b :> q `addL` q :> c `addL` q `setR` unlock y)
+    then all (\pr -> pr (c `addL` unlock y)) [C.prove, prove p]
+    else prove p (lock s (i, f) y)
   -- Update priority
-  (i, _, _) | i < LOCK -> prove p (f `next` y)
+  _ | i < LOCK -> prove p (next s (i, f) y)
   -- Search exhausted
   _ -> False

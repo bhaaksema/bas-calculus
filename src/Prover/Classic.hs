@@ -8,27 +8,27 @@ cprove :: Formula -> Bool
 cprove = prove . singleton . simply
 
 -- | Check provability
-prove :: FormulaSet -> Bool
-prove x = let (f, y) = view x in case f of
-  -- Contradictory leaf
-  (L0, T, Bot)            -> True
-  (L0, F, Top)            -> True
+prove :: Sequent -> Bool
+prove x = let (s, (i, f), y) = view x in case (i, s, f) of
+  -- Initial sequents
+  (L0, L, Bot)            -> True
+  (L0, R, Top)            -> True
   -- Replacement rules
-  (L0, T, Top)            -> prove y
-  (L0, F, Bot)            -> prove y
-  (L1, T, Var p)          -> prove (subst True p Top y)
-  (L1, F, Var p)          -> prove (subst True p Bot y)
-  (L1, T, (Var p) :> Bot) -> prove (subst True p Bot y)
-  (L1, F, (Var p) :> Bot) -> prove (subst True p Top y)
-  -- Unary consequence rules
-  (L2, T, a :& b)         -> prove (a `addT` b `addT` y)
-  (L2, F, a :| b)         -> prove (a `addF` b `addF` y)
-  (L2, F, a :> b)         -> prove (a `addT` b `addF` y)
-  -- Binary consequence rules
-  (L3, F, a :& b)         -> prove (a `addF` y) && prove (b `addF` y)
-  (L3, T, a :| b)         -> prove (a `addT` y) && prove (b `addT` y)
-  (L3, T, a :> b)         -> prove (a `addF` y) && prove (b `addT` y)
+  (L0, L, Top)            -> prove y
+  (L0, R, Bot)            -> prove y
+  (L1, L, Var p)          -> prove (subst True p Top y)
+  (L1, R, Var p)          -> prove (subst True p Bot y)
+  (L1, L, (Var p) :> Bot) -> prove (subst True p Bot y)
+  (L1, R, (Var p) :> Bot) -> prove (subst True p Top y)
+  -- Unary premise rules
+  (L2, L, a :& b)         -> prove (a `addL` b `addL` y)
+  (L2, R, a :| b)         -> prove (a `addR` b `addR` y)
+  (L2, R, a :> b)         -> prove (a `addL` b `addR` y)
+  -- Binary premise rules
+  (L3, R, a :& b)         -> prove (a `addR` y) && prove (b `addR` y)
+  (L3, L, a :| b)         -> prove (a `addL` y) && prove (b `addL` y)
+  (L3, L, a :> b)         -> prove (a `addR` y) && prove (b `addL` y)
   -- Update priority
-  (i, _, _) | i < LOCK    -> prove (f `next` y)
+  _ | i < LOCK            -> prove (next s (i, f) y)
   -- Search exhausted
   _                       -> False
