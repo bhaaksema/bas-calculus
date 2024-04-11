@@ -60,7 +60,7 @@ binary name f = InfixR (f <$ symbol name)
 
 operatorTable :: [[Operator Parser Formula]]
 operatorTable =
-  [ [ prefix "~" neg ]
+  [ [ prefix "~" Neg ]
   , [ binary "&" (:&) ]
   , [ binary "|" (:|) ]
   , [ binary "=>" (:>) ]

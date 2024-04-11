@@ -22,6 +22,7 @@ prove p s1 = let (h, s) = view s1 in case h of
   (L1, R, Var q) -> prove p (lock h $ subst False q Bot s)
   -- Unary premise rules
   (L2, L, a :& b) -> prove p (addL a $ addL b s)
+  (L2, L, Neg (a :| b)) -> prove p (addL (Neg a) $ addL (Neg b) s)
   (L2, L, (a :& b) :> c) -> prove p (addL (a :> b :> c) s)
   (L2, L, (a :| b) :> c) -> let q = fresh p in
     prove q (addL (a :> q) $ addL (b :> q) $ addL (q :> c) s)
@@ -29,8 +30,17 @@ prove p s1 = let (h, s) = view s1 in case h of
   -- Binary premise rules
   (L3, L, a :| b) -> all (prove p) [addL a s, addL b s]
   (L3, R, a :& b) -> all (prove p) [addR a s, addR b s]
+  (L3, R, Neg a) -> any (prove p) [addL a $ setR Bot s, lock h s]
   (L3, R, a :> b) -> any (prove p) [addL a $ setR b s, lock h s]
   -- Ternary premise rules
+  (L4, L, Neg (Neg a)) -> any (prove p) [addL a $ setR Bot $ unlock s, lock h s]
+  (L4, L, Neg (a :> b)) -> any (prove p) [addL a $ addL (Neg b) $ setR Bot $ unlock s, lock h s]
+  (L4, L, Neg (a :& b)) ->
+    all (prove p) [addL (Neg a) $ setR Bot $ unlock s, addL (Neg b) $ setR Bot $ unlock s]
+    || prove p (lock h s)
+  (L4, L, Neg a :> b) ->
+    all (prove p) [addL a $ setR Bot $ unlock s, addL b $ setR Bot $ unlock s]
+    || prove p (lock h s)
   (L4, L, (a :> b) :> c) -> let q = fresh p in
     if prove q (addL a $ addL (b :> q) $ addL (q :> c) $ setR q $ unlock s)
     then all (\pr -> pr (addL c $ unlock s)) [C.prove, prove p]
