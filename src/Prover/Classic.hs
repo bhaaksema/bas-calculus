@@ -10,8 +10,7 @@ cprove = prove . singleton . simply
 -- | Check provability
 prove :: Sequent -> Bool
 prove s1 = let (i, h, s) = view s1 in case i of
-  LOCK -> False -- Search exhausted
-  INIT -> case h of
+  C1 -> case h of
     -- Initial sequents
     (L, Bot)    -> True
     (R, Top)    -> True
@@ -21,16 +20,18 @@ prove s1 = let (i, h, s) = view s1 in case i of
     (L, Var p)  -> prove (subst True p Top s)
     (R, Var p)  -> prove (subst True p Bot s)
     -- Unary premise rules
-    (L, Neg a)  -> prove (addR a s)
-    (R, Neg a)  -> prove (addL a s)
-    (L, a :& b) -> prove (addL a $ addL b s)
-    (R, a :| b) -> prove (addR a $ addR b s)
-    (R, a :> b) -> prove (addL a $ addR b s)
+    (L, Neg a)  -> prove (add R a s)
+    (R, Neg a)  -> prove (add L a s)
+    (L, a :& b) -> prove (add L a $ add L b s)
+    (R, a :| b) -> prove (add R a $ add R b s)
+    (R, a :> b) -> prove (add L a $ add R b s)
     -- Scheduling
-    _           -> prove (push L1 h s)
-  _ -> case h of
+    _           -> prove (push C2 h s)
+  C2 -> case h of
     -- Binary premise rules
-    (L, a :| b) -> prove (addL a s) && prove (addL b s)
-    (L, a :> b) -> prove (addR a s) && prove (addL b s)
-    (R, a :& b) -> prove (addR a s) && prove (addR b s)
+    (L, a :| b) -> prove (add L a s) && prove (add L b s)
+    (L, a :> b) -> prove (add R a s) && prove (add L b s)
+    (R, a :& b) -> prove (add R a s) && prove (add R b s)
     _           -> undefined
+  -- Search exhausted
+  _ -> False

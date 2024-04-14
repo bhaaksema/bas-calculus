@@ -9,23 +9,23 @@ iprove :: Formula -> Bool
 iprove = (\f -> prove f (singleton f)) . simply
 
 -- | Scheduling of signed formulas
-schedule :: (Sign, Formula) -> Lock
-schedule (L, _ :| _)        = L1
-schedule (R, _ :& _)        = L1
-schedule (R, Neg _)         = L1
-schedule (R, _ :> _)        = L1
-schedule (L, Neg (Neg _))   = L1
-schedule (L, Neg (_ :> _))  = L1
-schedule (L, Neg (_ :& _))  = L2
-schedule (L, Neg _ :> _)    = L2
-schedule (L, (_ :> _) :> _) = L2
-schedule _                  = LOCK
+schedule :: (Sign, Formula) -> Cat
+schedule (L, _ :| _)        = C2
+schedule (R, _ :& _)        = C2
+schedule (R, Neg _)         = C3
+schedule (R, _ :> _)        = C3
+schedule (L, Neg _ :> _)    = C4
+schedule (L, (_ :> _) :> _) = C4
+schedule (L, Neg (Neg _))   = C5
+schedule (L, Neg (_ :> _))  = C5
+schedule (L, Neg (_ :& _))  = C6
+schedule _                  = CX
 
 -- | Check provability
 prove :: Formula -> Sequent -> Bool
 prove p s1 = let (i, h, s) = view s1 in case i of
-  LOCK -> False -- Search exhausted
-  INIT -> case h of
+  CX -> False -- Search exhausted
+  C1 -> case h of
     -- Initial sequents
     (L, Bot) -> True; (R, Top) -> True
     -- Replacement rules
@@ -34,26 +34,33 @@ prove p s1 = let (i, h, s) = view s1 in case i of
     (L, Var q) -> prove p (subst True q Top s)
     (L, Neg (Var q)) -> prove p (subst True q Bot s)
     (R, Var q) -> prove p (lock h $ subst False q Bot s)
-    -- Unary premise rules
-    (L, a :& b) -> prove p (addL a $ addL b s)
-    (L, Neg (a :| b)) -> prove p (addL (Neg a) $ addL (Neg b) s)
-    (L, (a :& b) :> c) -> prove p (addL (a :> b :> c) s)
+    -- Cat 1
+    (L, a :& b) -> prove p (add L a $ add L b s)
+    (L, Neg (a :| b)) -> prove p (add L (Neg a) $ add L (Neg b) s)
+    (L, (a :& b) :> c) -> prove p (add L (a :> b :> c) s)
     (L, (a :| b) :> c) -> let q = fresh p in
-      prove q (addL (a :> q) $ addL (b :> q) $ addL (q :> c) s)
-    (R, a :| b) -> prove p (addR a $ addR b s)
+      prove q (add L (a :> q) $ add L (b :> q) $ add L (q :> c) s)
+    (R, a :| b) -> prove p (add R a $ add R b s)
     -- Scheduling
     _ -> prove p (push (schedule h) h s)
   _ -> case h of
-    -- Binary premise rules
-    (L, Neg (Neg a)) | prove p (addL a $ delR $ unlock s) -> True
-    (L, Neg (a :> b)) | prove p (addL a $ addL (Neg b) $ delR $ unlock s) -> True
-    (L, a :| b) -> all (prove p) [addL a s, addL b s]
-    (R, a :& b) -> all (prove p) [addR a s, addR b s]
-    (R, Neg a) | prove p (addL a $ delR s) -> True
-    (R, a :> b) | prove p (addL a $ setR b s) -> True
-    -- Ternary premise rules
-    (L, Neg (a :& b)) | all (prove p) [addL (Neg a) $ delR $ unlock s, addL (Neg b) $ delR $ unlock s] -> True
-    (L, Neg a :> b) | all (prove p) [addL a $ delR $ unlock s, addL b $ delR $ unlock s] -> True
-    (L, (a :> b) :> c) | q <- fresh p, prove q (addL a $ addL (b :> q) $ addL (q :> c) $ setR q $ unlock s)
-      -> all (\pr -> pr (addL c $ unlock s)) [C.prove, prove p]
+    -- Cat 2
+    (L, a :| b) -> all (prove p) [add L a s, add L b s]
+    (R, a :& b) -> all (prove p) [add R a s, add R b s]
+    -- Cat 3
+    (R, Neg a) | res <- prove p (add L a $ delR s), nullR s || res -> res
+    (R, a :> b) | res <- prove p (add L a $ setR b s), nullR s || res -> res
+    -- Cat 4
+    (L, a :> b) | not $ C.prove (add L (a :> b) $ unlock s) -> False
+    (L, Neg a :> b) | nullR s ||
+      prove p (add L a $ delR $ unlock s) -> prove p (add L b $ unlock s)
+    (L, (a :> b) :> c) | q <- fresh p, nullR s ||
+      prove q (add L a $ add L (b :> q) $ add L (q :> c) $ setR q $ unlock s)
+      -> prove p (add L c $ unlock s)
+    -- Cat 5
+    (L, Neg (Neg a)) -> prove p (add L a $ delR $ unlock s)
+    (L, Neg (a :> b)) -> prove p (add L a $ add L (Neg b) $ delR $ unlock s)
+    -- Cat 6
+    (L, Neg (a :& b)) -> all (\f -> prove p (add L (Neg f) $ delR $ unlock s)) [a, b]
+    -- Backtracking
     _ -> prove p (lock h s)
