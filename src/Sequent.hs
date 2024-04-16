@@ -6,7 +6,7 @@ import qualified Data.Set as S
 import Formula
 
 -- | Category for formula
-data Cat = C1 | C2 | C3 | C4 | C5 | C6 | CX
+data Category = C1 | C2 | C3 | C4 | C5 | C6 | CX
   deriving (Eq, Ord, Show, Enum, Bounded)
 
 -- | Sign for formula
@@ -14,14 +14,14 @@ data Sign = L | R deriving (Eq, Show)
 
 -- | Sequent is a pair of formula sets
 data Pair a = S { left :: a, right :: a } deriving (Functor)
-type Sequent = Pair (S.Set (Cat, Formula))
+type Sequent = Pair (S.Set (Category, Formula))
 
 -- | \(O(1)\). Singleton formula set
 singleton :: Formula -> Sequent
 singleton f = S S.empty (S.singleton (minBound, f))
 
--- | \(O(\log n)\). Retrieve the formula with smallest category
-view :: Sequent -> (Cat, (Sign, Formula), Sequent)
+-- | \(O(\log n)\). Retrieve the formula with smallest Category
+view :: Sequent -> (Category, (Sign, Formula), Sequent)
 view s = case (S.minView (left s), S.minView (right s)) of
   (Just ((i, a), l), Just ((j, b), r))
     | i <= j    -> (i, (L, a), s { left = l })
@@ -48,7 +48,7 @@ nullR :: Sequent -> Bool
 nullR s = S.null (right s)
 
 -- | \(O(\log n)\). Insert a formula with some category
-push :: Cat -> (Sign, Formula) -> Sequent -> Sequent
+push :: Category -> (Sign, Formula) -> Sequent -> Sequent
 push i (L, f) s = s { left = S.insert (i, f) (left s) }
 push i (R, f) s = s { right = S.insert (i, f) (right s) }
 
