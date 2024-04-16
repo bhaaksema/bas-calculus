@@ -13,12 +13,12 @@ empty schL schR = S (C.empty schL) (C.empty schR)
 
 -- | \(O(1)\). Sequent with one right formula.
 singletonR :: (Formula -> C.Category) -> (Formula -> C.Category) -> Formula -> Sequent
-singletonR schL schR f = addR f $ empty schL schR
+singletonR schL schR f = addR f (empty schL schR)
 
 -- | \(O(1)\). Retrieve the formula with smallest category.
 view :: Sequent -> Maybe (Either (Formula, Sequent) (Formula, Sequent))
 view s = case (C.view $ left s, C.view $ right s) of
-  (Just (i, a, l), Just (j, b, r))
+  (Just (i, a, l), Just (j, b, r)) -- view is left-biased
     | i <= j    -> Just (Left (a, s { left = l }))
     | otherwise -> Just (Right (b, s { right = r }))
   (Just (_, a, l), _) -> Just (Left (a, s { left = l }))
@@ -33,13 +33,13 @@ addL f s = s { left = C.add f (left s) }
 addR :: Formula -> Sequent -> Sequent
 addR f s = s { right = C.add f (right s) }
 
--- | \(O(1)\). Replace the Collection.
+-- | \(O(1)\). Replace the right formulas, unlocking the left formulas.
 setR :: Formula -> Sequent -> Sequent
-setR f s = s { right = C.add f (C.empty $ C.sch $ right s) }
+setR f = addR f . delR
 
--- | \(O(1)\). Delete the right formulas.
+-- | \(O(1)\). Delete the right formulas, unlocking the left formulas.
 delR :: Sequent -> Sequent
-delR s = s { right = C.empty $ C.sch $ right s }
+delR s = s { left = C.unlock (left s), right = C.empty (C.sch $ right s) }
 
 -- | \(O(1)\). Check if the succedent is empty.
 nullR :: Sequent -> Bool
@@ -53,11 +53,7 @@ lockL f s = s { left = C.lock f (left s) }
 lockR :: Formula -> Sequent -> Sequent
 lockR f s = s { right = C.lock f (right s) }
 
--- | \(O(n)\). Unlock all formulas.
-unlock :: Sequent -> Sequent
-unlock = fmap C.unlock
-
--- | \(O(n)\). Substitute sequent.
+-- | \(O(n)\). Substitute sequent, may unlock formulas.
 subst :: Bool -> Int -> Formula -> Sequent -> Sequent
 subst t p f = fmap $ C.map $ unitSubsti t (p, f)
 

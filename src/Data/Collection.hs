@@ -36,15 +36,6 @@ add f c = case sch c f of
 items :: Collection -> [Formula]
 items C { .. } = c0 ++ c1 ++ c2 ++ c3 ++ c4 ++ c5 ++ c6 ++ S.toList cx
 
--- | \(O(1)\). Retrieve all unlocked formulas.
-unlocked :: Collection -> [Formula]
-unlocked C { .. } = c0 ++ c1 ++ c2 ++ c3 ++ c4 ++ c5 ++ c6
-
--- | \(O(1)\). Retrieve all locked formulas.
-locked :: Collection -> [Formula]
-locked C { .. } = S.toList cx
-
-
 -- | \(O(1)\). Retrieve the formula with smallest category.
 view :: Collection -> Maybe (Category, Formula, Collection)
 view C { c0 = f : fs, .. } = Just (C0, f, C { c0 = fs, .. })
@@ -66,5 +57,6 @@ unlock c = foldr add (c { cx = S.empty }) (cx c)
 
 -- | \(O(n)\). Apply a function to every formula in the collection.
 map :: (Formula -> Formula) -> Collection -> Collection
-map f c = foldr (\a -> let b = f a in if a == b then lock a else add b)
-  (foldr (add . f) (empty $ sch c) (unlocked c)) (locked c)
+map f C { .. } = foldr (\a -> let b = f a in if a == b then lock a else add b)
+  (foldr (add . f) (empty sch) unlocked) (S.toList cx)
+  where unlocked = c0 ++ c1 ++ c2 ++ c3 ++ c4 ++ c5 ++ c6

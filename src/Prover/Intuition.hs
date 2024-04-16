@@ -55,15 +55,15 @@ iprove p s1 = case view s1 of
     -- Category 4
     _ :> _ | not $ Cl.prove (toFormula s1) -> False
     Neg a :> b | nullR s ||
-      iprove p (addL a $ unlock $ delR s) -> iprove p (addL b $ unlock s)
+      iprove p (addL a $ delR s) -> iprove p (addL b s)
     (a :> b) :> c | q <- fresh p, nullR s ||
-      iprove q (addL a $ addL (b :> q) $ addL (q :> c) $ setR q $ unlock s)
-      -> iprove p (addL c $ unlock s)
+      iprove q (addL a $ addL (b :> q) $ addL (q :> c) $ setR q s)
+      -> iprove p (addL c s)
     -- Category 5
-    Neg (Neg a) -> iprove p (addL a $ unlock $ delR s)
-    Neg (a :> b) -> iprove p (addL a $ addL (Neg b) $ unlock $ delR s)
+    Neg (Neg a) -> iprove p (addL a $ delR s)
+    Neg (a :> b) -> iprove p (addL a $ addL (Neg b) $ delR s)
     -- Category 6
-    Neg (a :& b) -> all (\c -> iprove p (addL (Neg c) $ unlock $ delR s)) [a, b]
+    Neg (a :& b) -> all (\c -> iprove p (addL (Neg c) $ delR s)) [a, b]
     -- Backtrack
     _ -> iprove p (lockL f s)
   Just (Right (f, s)) -> case f of
