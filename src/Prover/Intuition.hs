@@ -1,9 +1,9 @@
 module Prover.Intuition (prove) where
 
-import           Data.Collection     (Category (..))
+import           Data.Collection (Category (..))
 import           Data.Formula
-import qualified Prover.Classic as Cl
 import           Data.Sequent
+import qualified Prover.Classic  as Cl
 
 -- | Check formula provability
 prove :: Formula -> Bool
@@ -37,48 +37,47 @@ prove = (\f -> iprove f (singletonR schL schR f)) . simply where
 
 -- | Check sequent provability
 iprove :: Formula -> Sequent -> Bool
+iprove _ s | nullR s = Cl.prove (toFormula s)
 iprove p s1 = case view s1 of
-  Just (sgn, f, s) -> case sgn of
-    L -> case f of
-      -- Category 0
-      Bot -> True
-      Top -> iprove p s
-      -- Category 1
-      Var q -> iprove p (subst True q Top s)
-      a :& b -> iprove p (add L a $ add L b s)
-      Neg (a :| b) -> iprove p (add L (Neg a) $ add L (Neg b) s)
-      (a :& b) :> c -> iprove p (add L (a :> b :> c) s)
-      (a :| b) :> c -> let q = fresh p in
-        iprove q (add L (a :> q) $ add L (b :> q) $ add L (q :> c) s)
-      -- Category 2
-      a :| b -> all (iprove p) [add L a s, add L b s]
-      -- Category 4
-      _ :> _ | not $ Cl.prove (toFormula s1) -> False
-      Neg a :> b | nullR s ||
-        iprove p (add L a $ delR $ unlock s) -> iprove p (add L b $ unlock s)
-      (a :> b) :> c | q <- fresh p, nullR s ||
-        iprove q (add L a $ add L (b :> q) $ add L (q :> c) $ setR q $ unlock s)
-        -> iprove p (add L c $ unlock s)
-      -- Category 5
-      Neg (Neg a) -> iprove p (add L a $ delR $ unlock s)
-      Neg (a :> b) -> iprove p (add L a $ add L (Neg b) $ delR $ unlock s)
-      -- Category 6
-      Neg (a :& b) -> all (\c -> iprove p (add L (Neg c) $ delR $ unlock s)) [a, b]
-      -- Backtrack
-      _ -> iprove p (lock L f s)
-    R -> case f of
-      -- Category 0
-      Bot    -> if nullR s then Cl.prove (toFormula s1) else
-        iprove p s
-      Top    -> True
-      -- Category 1
-      Var q  -> iprove p (lock R f $ subst False q Bot s)
-      a :| b -> iprove p (add R a $ add R b s)
-      -- Category 2
-      a :& b -> all (iprove p) [add R a s, add R b s]
-      -- Category 3
-      Neg a | res <- iprove p (add L a $ delR s), nullR s || res -> res
-      a :> b | res <- iprove p (add L a $ setR b s), nullR s || res -> res
-      -- Backtrack
-      _ -> iprove p (lock R f s)
+  Just (Left (f, s)) -> case f of
+    -- Category 0
+    Bot -> True
+    Top -> iprove p s
+    -- Category 1
+    Var q -> iprove p (subst True q Top s)
+    a :& b -> iprove p (addL a $ addL b s)
+    Neg (a :| b) -> iprove p (addL (Neg a) $ addL (Neg b) s)
+    (a :& b) :> c -> iprove p (addL (a :> b :> c) s)
+    (a :| b) :> c -> let q = fresh p in
+      iprove q (addL (a :> q) $ addL (b :> q) $ addL (q :> c) s)
+    -- Category 2
+    a :| b -> all (iprove p) [addL a s, addL b s]
+    -- Category 4
+    _ :> _ | not $ Cl.prove (toFormula s1) -> False
+    Neg a :> b | nullR s ||
+      iprove p (addL a $ unlock $ delR s) -> iprove p (addL b $ unlock s)
+    (a :> b) :> c | q <- fresh p, nullR s ||
+      iprove q (addL a $ addL (b :> q) $ addL (q :> c) $ setR q $ unlock s)
+      -> iprove p (addL c $ unlock s)
+    -- Category 5
+    Neg (Neg a) -> iprove p (addL a $ unlock $ delR s)
+    Neg (a :> b) -> iprove p (addL a $ addL (Neg b) $ unlock $ delR s)
+    -- Category 6
+    Neg (a :& b) -> all (\c -> iprove p (addL (Neg c) $ unlock $ delR s)) [a, b]
+    -- Backtrack
+    _ -> iprove p (lockL f s)
+  Just (Right (f, s)) -> case f of
+    -- Category 0
+    Top -> True
+    Bot -> iprove p s
+    -- Category 1
+    Var q -> iprove p (lockR f $ subst False q Bot s)
+    a :| b -> iprove p (addR a $ addR b s)
+    -- Category 2
+    a :& b -> all (iprove p) [addR a s, addR b s]
+    -- Category 3
+    Neg a | res <- iprove p (addL a $ delR s), nullR s || res -> res
+    a :> b | res <- iprove p (addL a $ setR b s), nullR s || res -> res
+    -- Backtrack
+    _ -> iprove p (lockR f s)
   Nothing -> False
