@@ -33,12 +33,13 @@ library
   import:           shared-props
   exposed-modules:
     Embed,
-    Formula,
+    Data.Formula,
+    Data.Collection,
+    Data.Sequent,
     Parser,
     Prover.Classic,
     Prover.Intuition,
     Prover.Super
-  other-modules:    Sequent
   hs-source-dirs:   src
   build-depends:
     containers ^>=0.6.7,

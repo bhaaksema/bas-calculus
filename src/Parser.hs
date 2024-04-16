@@ -11,7 +11,7 @@ import           Text.Megaparsec                hiding (State)
 import           Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer     as L
 
-import Formula
+import Data.Formula
 
 type Parser = ParsecT Void Text (State (M.Map String Int))
 

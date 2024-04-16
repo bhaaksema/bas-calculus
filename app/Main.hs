@@ -5,7 +5,7 @@ import qualified Data.Text.IO       as T
 import           System.Environment (getArgs)
 
 import Parser           (parseFile)
-import Prover.Intuition (iprove)
+import Prover.Intuition (prove)
 
 main :: IO ()
 main = do
@@ -14,5 +14,5 @@ main = do
   putStrLn fileName
   file <- T.readFile fileName
   let formula = parseFile fileName file
-  let result = iprove formula
+  let result = prove formula
   putStrLn $ if result then "Valid" else "Invalid"

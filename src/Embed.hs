@@ -3,7 +3,7 @@ module Embed (Axiom, embed) where
 import qualified Data.IntMap as M
 import qualified Data.Set    as S
 
-import Formula
+import Data.Formula
 
 -- | Set of variables of a formula
 vars :: Formula -> S.Set Int

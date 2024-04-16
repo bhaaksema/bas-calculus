@@ -1,9 +1,9 @@
 module Prover.Super (sprove) where
 
-import           Embed
-import           Formula
-import qualified Prover.Intuition as I
+import Embed
+import Data.Formula
+import Prover.Intuition
 
 -- | Prove a superintuitionistic theorem
 sprove :: [Axiom] -> Formula -> Bool
-sprove ax = I.iprove . embed ax
+sprove ax = prove . embed ax

@@ -17,7 +17,7 @@ testProblem problem = do
   text <- T.readFile problem
   let expect = not ("Non-Theorem" `isInfixOf` text)
   let formula = parseFile problem text
-  return (testCase problem $ iprove formula @?= expect)
+  return (testCase problem $ prove formula @?= expect)
 
 -- | Create a domain test tree containing problems
 testDomain :: FilePath -> IO TestTree

@@ -1,4 +1,4 @@
-module Formula where
+module Data.Formula where
 
 import qualified Data.IntMap as M
 
