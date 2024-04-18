@@ -19,16 +19,6 @@ infixr 6 :>
 (<:>) a b = (a :> b) :& (b :> a)
 infix 5 <:>
 
--- | Gets a fresh variable for a formula
-fresh :: Formula -> Formula
-fresh Bot      = Var 0
-fresh Top      = Var 0
-fresh (Var p)  = Var (p + 1)
-fresh (Neg a)  = fresh a
-fresh (a :& b) = max (fresh a) (fresh b)
-fresh (a :| b) = max (fresh a) (fresh b)
-fresh (a :> b) = max (fresh a) (fresh b)
-
 -- | Simplify formula without substitution
 simply :: Formula -> Formula
 simply = fullSubsti M.empty
@@ -72,6 +62,17 @@ substi True m (a1 :> b1) = case
     (_, Top) -> Top
     (a, b)   -> a :> b
 substi _ _ a = a
+
+-- | Enum instance for Formula
+instance Enum Formula where
+  toEnum = Var
+  fromEnum Bot      = 0
+  fromEnum Top      = 0
+  fromEnum (Var n)  = n
+  fromEnum (Neg a)  = fromEnum a
+  fromEnum (a :& b) = fromEnum a `max` fromEnum b
+  fromEnum (a :| b) = fromEnum a `max` fromEnum b
+  fromEnum (a :> b) = fromEnum a `max` fromEnum b
 
 -- | Show instance for Formula
 instance Show Formula where

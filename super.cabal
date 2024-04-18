@@ -32,7 +32,6 @@ executable super
 library
   import:           shared-props
   exposed-modules:
-    Embed,
     Data.Formula,
     Data.Collection,
     Data.Sequent,
