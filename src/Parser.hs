@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Parser where
+module Parser (parse) where
 
 import           Control.Monad.Combinators.Expr
 import           Control.Monad.State
@@ -7,7 +7,7 @@ import           Data.List                      (partition)
 import qualified Data.Map                       as M
 import           Data.Text                      (Text)
 import           Data.Void                      (Void)
-import           Text.Megaparsec                hiding (State)
+import           Text.Megaparsec                hiding (State, parse)
 import           Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer     as L
 
@@ -100,17 +100,10 @@ pTPTP = do
   return (if null facts then goal else combine facts :> goal)
 
 -- | TPTP Syntax based parser: https://tptp.org/TPTP/SyntaxBNF.html
-parseFile :: String -> Text -> Formula
-parseFile file input =
-  let output = runParserT pTPTP file input
+parse :: String -> Text -> Formula
+parse file input = let
+  parser = choice [pTPTP, pFOFFormula]
+  output = runParserT parser file input
   in case evalState output M.empty of
-    Left e  -> error $ errorBundlePretty e
+    Left e  -> error (errorBundlePretty e)
     Right f -> f
-
--- TODO: merge parseFile and parseFormula
-parseFormula :: Text -> (Formula, M.Map String Int)
-parseFormula input =
-  let output = runParserT pFOFFormula "" input
-  in case runState output M.empty of
-    (Left e, _)  -> error $ errorBundlePretty e
-    (Right f, m) -> (f, m)
