@@ -1,4 +1,4 @@
-module Prover.Super (Axiomatization (..), prove, proveWith) where
+module Prover.Super where
 
 import qualified Data.IntMap as M
 import qualified Data.Set    as S

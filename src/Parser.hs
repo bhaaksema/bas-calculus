@@ -93,7 +93,7 @@ pFOF = do
 -- | Parse TPTP file
 pTPTP :: Parser Formula
 pTPTP = do
-  fs <- sc *> some pFOF <* eof
+  fs <- some pFOF <* eof
   let (goals, facts) = partition fst fs
   let combine = foldr1 (:&) . map snd
   let goal = if null goals then Top else combine goals
@@ -102,7 +102,7 @@ pTPTP = do
 -- | TPTP Syntax based parser: https://tptp.org/TPTP/SyntaxBNF.html
 parse :: String -> Text -> Formula
 parse file input = let
-  parser = choice [pTPTP, pFOFFormula]
+  parser = sc *> choice [pTPTP, pFOFFormula]
   output = runParserT parser file input
   in case evalState output M.empty of
     Left e  -> error (errorBundlePretty e)
