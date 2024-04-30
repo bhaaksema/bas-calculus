@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor, FlexibleInstances #-}
+{-# LANGUAGE DeriveFunctor #-}
 module Data.Sequent where
 
 import qualified Data.Collection as C

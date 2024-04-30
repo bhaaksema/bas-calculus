@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances, RecordWildCards #-}
+{-# LANGUAGE RecordWildCards #-}
 module Data.Collection where
 
 import Data.Formula
@@ -30,7 +30,7 @@ add f c = case sch c f of
   C6 -> c { c6 = f : c6 c }
   CX -> c { cx = f : cx c }
 
--- | \(O(1)\). Retrieve all formulas uncategoryized.
+-- | \(O(1)\). Retrieve all formulas uncategorized.
 items :: Collection -> [Formula]
 items C { .. } = c0 ++ c1 ++ c2 ++ c3 ++ c4 ++ c5 ++ c6 ++ cx
 

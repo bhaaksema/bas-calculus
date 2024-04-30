@@ -2,6 +2,7 @@ module Parser (parse) where
 
 import           Control.Monad.Combinators.Expr
 import           Control.Monad.State
+import           Data.Functor                   (void)
 import           Data.List                      (partition)
 import qualified Data.Map                       as M
 import           Data.Void                      (Void)
