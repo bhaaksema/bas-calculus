@@ -18,17 +18,23 @@ instance Show Collection where
 empty :: (Formula -> Category) -> Collection
 empty sch = C sch [] [] [] [] [] [] [] []
 
--- | \(O(1)\). Add a formula according to the category.
+-- | \(O(m)\). Add a formula according to the category.
 add :: Formula -> Collection -> Collection
-add f c = case sch c f of
-  C0 -> c { c0 = f : c0 c }
-  C1 -> c { c1 = f : c1 c }
-  C2 -> c { c2 = f : c2 c }
-  C3 -> c { c3 = f : c3 c }
-  C4 -> c { c4 = f : c4 c }
-  C5 -> c { c5 = f : c5 c }
-  C6 -> c { c6 = f : c6 c }
-  CX -> c { cx = f : cx c }
+add f c = let
+  ins x [] = [x]
+  ins x (y : ys) = case compare x y of
+    LT -> x : y : ys
+    EQ -> x : ys
+    GT -> y : ins x ys
+  in case sch c f of
+  C0 -> c { c0 = f `ins` c0 c }
+  C1 -> c { c1 = f `ins` c1 c }
+  C2 -> c { c2 = f `ins` c2 c }
+  C3 -> c { c3 = f `ins` c3 c }
+  C4 -> c { c4 = f `ins` c4 c }
+  C5 -> c { c5 = f `ins` c5 c }
+  C6 -> c { c6 = f `ins` c6 c }
+  CX -> c { cx = f `ins` cx c }
 
 -- | \(O(1)\). Retrieve all formulas uncategorized.
 items :: Collection -> [Formula]

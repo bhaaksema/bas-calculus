@@ -6,9 +6,6 @@ import qualified Data.Set    as S
 import           Data.Formula
 import qualified Prover.Intuition as Int
 
--- | Axiomatization types
-data Axiomatization = VAR | FOR | SET deriving (Eq, Ord, Show)
-
 -- | Set of variables of a formula
 vars :: Formula -> S.Set Formula
 vars p@(Var _) = S.singleton p
@@ -28,7 +25,10 @@ fors a        = S.singleton a
 cons :: Formula -> S.Set Formula
 cons = S.map (foldr1 (:&)) . S.deleteMin . S.powerSet . fors
 
--- | Convert Axiomatization to corresponding formula
+-- | Axiomatization types
+data Axiomatization = VAR | FOR | SET deriving (Eq, Ord, Show)
+
+-- | Convert Axiomatization to corresponding function
 toFunction :: Axiomatization -> (Formula -> S.Set Formula)
 toFunction VAR = vars
 toFunction FOR = fors
@@ -37,8 +37,8 @@ toFunction SET = cons
 -- Upwards propagation
 upwards :: (Formula -> Formula -> Formula) -> Formula -> Formula -> Bool
 upwards op a p = let
-  q = succ p; r = succ q
-  subap b = unitSubsti True (fromEnum p, b) a
+  q = succ a; r = succ q
+  subap b = substitute1 True (fromEnum p, b) a
   in Int.prove (subap q :& subap r :> subap (op q r))
 
 -- Check the kind of axiomatization
@@ -49,9 +49,12 @@ axiomatization _ = SET
 
 -- | Generalized bounding function
 bfunc :: S.Set Formula -> [Formula] -> [Formula]
-bfunc set as = let
-  in [fullSubsti m a | a <- as,
-  m <- foldr (\p -> (M.insert (fromEnum p) <$> S.toList set <*>)) [M.empty] (vars a)]
+bfunc set as =
+  [ substitute m a | a <- as
+  , m <- foldr
+    (\p -> (M.insert (fromEnum p) <$> S.toList set <*>))
+    [M.empty] (vars a)
+  ]
 
 -- | Prove with specified axiomatization type
 proveWith :: Axiomatization -> [Formula] -> Formula -> Bool

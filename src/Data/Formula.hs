@@ -19,49 +19,49 @@ infixr 6 :>
 (<:>) a b = (a :> b) :& (b :> a)
 infix 5 <:>
 
--- | Simplify formula without substitution
-simply :: Formula -> Formula
-simply = fullSubsti M.empty
-
--- | Simplify and fully apply substitution map
-fullSubsti :: M.IntMap Formula -> Formula -> Formula
-fullSubsti = substi True
-
--- | Simplify and (partially) apply singlton substitution map
-unitSubsti :: Bool -> (Int, Formula) -> Formula -> Formula
-unitSubsti t (p, f) = substi t (M.singleton p f)
-
 -- | Apply boolean simplification rules
--- and (partially) apply a substitution map
-substi :: Bool -> M.IntMap Formula -> Formula -> Formula
-substi _ m (Var p) | Just f <- m M.!? p = f
-substi True m (Neg a1) = case
-  fullSubsti m a1 of
+simplify :: Formula -> Formula
+simplify = substitute M.empty
+
+-- | Full substitution, as opposed to partial substitution
+substitute :: M.IntMap Formula -> Formula -> Formula
+substitute = substituteG True
+
+-- | Substitution of a single variable
+substitute1 :: Bool -> (Int, Formula) -> Formula -> Formula
+substitute1 t (p, f) = substituteG t (M.singleton p f)
+
+-- | Generic variable substitution function,
+-- also applies boolean simplification rules
+substituteG :: Bool -> M.IntMap Formula -> Formula -> Formula
+substituteG _ m (Var p) | Just f <- m M.!? p = f
+substituteG True m (Neg a1) = case
+  substitute m a1 of
     Bot -> Top
     Top -> Bot
     a   -> Neg a
-substi t m (a1 :& b1) = case
-  (substi t m a1, substi t m b1) of
+substituteG t m (a1 :& b1) = case
+  (substituteG t m a1, substituteG t m b1) of
     (Bot, _) -> Bot
     (_, Bot) -> Bot
     (Top, b) -> b
     (a, Top) -> a
     (a, b)   -> a :& b
-substi t m (a1 :| b1) = case
-  (substi t m a1, substi t m b1) of
+substituteG t m (a1 :| b1) = case
+  (substituteG t m a1, substituteG t m b1) of
     (Bot, b) -> b
     (a, Bot) -> a
     (Top, _) -> Top
     (_, Top) -> Top
     (a, b)   -> a :| b
-substi True m (a1 :> b1) = case
-  (fullSubsti m a1, fullSubsti m b1) of
+substituteG True m (a1 :> b1) = case
+  (substitute m a1, substitute m b1) of
     (Bot, _) -> Top
     (a, Bot) -> Neg a
     (Top, b) -> b
     (_, Top) -> Top
     (a, b)   -> a :> b
-substi _ _ a = a
+substituteG _ _ a = a
 
 -- | Enum instance for Formula
 instance Enum Formula where
