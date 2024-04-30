@@ -1,11 +1,9 @@
-{-# LANGUAGE OverloadedStrings #-}
 module Parser (parse) where
 
 import           Control.Monad.Combinators.Expr
 import           Control.Monad.State
 import           Data.List                      (partition)
 import qualified Data.Map                       as M
-import           Data.Text                      (Text)
 import           Data.Void                      (Void)
 import           Text.Megaparsec                hiding (State, parse)
 import           Text.Megaparsec.Char
@@ -13,7 +11,7 @@ import qualified Text.Megaparsec.Char.Lexer     as L
 
 import Data.Formula
 
-type Parser = ParsecT Void Text (State (M.Map String Int))
+type Parser = ParsecT Void String (State (M.Map String Int))
 
 sc :: Parser ()
 sc = L.space space1
@@ -23,7 +21,7 @@ sc = L.space space1
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme sc
 
-symbol :: Text -> Parser Text
+symbol :: String -> Parser String
 symbol = L.symbol sc
 
 pVariable :: Parser Formula
@@ -52,10 +50,10 @@ pUnitaryFormula = choice
   , pVariable
   ]
 
-prefix :: Text -> (Formula -> Formula) -> Operator Parser Formula
+prefix :: String -> (Formula -> Formula) -> Operator Parser Formula
 prefix name f = Prefix (foldr1 (.) <$> some (f <$ symbol name))
 
-binary :: Text -> (Formula -> Formula -> Formula) -> Operator Parser Formula
+binary :: String -> (Formula -> Formula -> Formula) -> Operator Parser Formula
 binary name f = InfixR (f <$ symbol name)
 
 operatorTable :: [[Operator Parser Formula]]
@@ -100,7 +98,7 @@ pTPTP = do
   return (if null facts then goal else combine facts :> goal)
 
 -- | TPTP Syntax based parser: https://tptp.org/TPTP/SyntaxBNF.html
-parse :: String -> Text -> Formula
+parse :: String -> String -> Formula
 parse file input = let
   parser = sc *> choice [pTPTP, pFOFFormula]
   output = runParserT parser file input

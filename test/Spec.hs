@@ -1,20 +1,17 @@
-{-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
-import           Data.List        (sort)
-import           Data.Text        (isInfixOf)
-import qualified Data.Text.IO     as T
-import           System.Directory
-import           Test.Tasty
-import           Test.Tasty.HUnit
+import Data.List        (isInfixOf, sort)
+import System.Directory
+import Test.Tasty
+import Test.Tasty.HUnit
 
-import Parser
-import Prover.Intuition
+import Parser           (parse)
+import Prover.Intuition (prove)
 
 -- | Create a problem test case
 testProblem :: FilePath -> IO TestTree
 testProblem problem = do
-  text <- T.readFile problem
+  text <- readFile problem
   let expect = not ("Non-Theorem" `isInfixOf` text)
   let formula = parse problem text
   return (testCase problem $ prove formula @?= expect)
