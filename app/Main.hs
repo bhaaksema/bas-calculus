@@ -1,24 +1,54 @@
-{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
-import           Data.Text          (pack)
-import qualified Data.Text.IO       as T
-import           System.Environment (getArgs)
+import Control.Exception  (SomeException, catch)
+import System.Environment (getArgs)
 
-import           Parser           (parse)
+import           Data.Formula
+import qualified Parser           as P
 import qualified Prover.Classic   as C
 import qualified Prover.Intuition as I
 import qualified Prover.Super     as S
 
-main :: IO ()
-main = do
+-- Local parser for the main module
+parse :: String -> Formula
+parse = P.parse "Main.hs"
+
+-- Variable-axiomatisation of Jankov Logic
+jn :: [Formula]
+jn = [parse "~p | ~~p"]
+
+-- Variable-axiomatisation of Gödel-Dummett logic
+gd :: [Formula]
+gd = parse "(p => q) | ((p => q) => p)" : jn
+
+-- Checks validity based on the given logic
+run :: IO ()
+run = do
   [logic, fileName] <- getArgs
   putStrLn fileName
   prove <- case logic of
-    "cpl" -> return C.prove
-    "ipl" -> return I.prove
-    "jan" -> return $ S.proveWith S.VAR [parse "Main.hs" "~p | ~~p"]
-    axiom -> return $ S.prove [parse "Main.hs" $ pack axiom]
-  file <- T.readFile fileName
-  let formula = parse fileName file
+    "cl"  -> return C.prove
+    "il"  -> return I.prove
+    "jn"  -> return $ S.proveWith S.VAR jn
+    "gd"  -> return $ S.proveWith S.VAR gd
+    axiom -> return $ S.prove [parse axiom]
+  file <- readFile fileName
+  let formula = P.parse fileName file
   putStrLn $ if prove formula then "Valid" else "Invalid"
+
+-- Exception handler
+handler :: SomeException -> IO ()
+handler _ = putStrLn "Usage: super LOGIC FILE\n\
+  \\n  LOGIC:\n\
+  \    cl\t\tClassical Propositional Logic (CPL)\n\
+  \    il\t\tIntuitionistic Propositional Logic (IPL)\n\
+  \    jn\t\tJankov Logic\n\
+  \    gd\t\tGödel-Dummett Logic\n\
+  \    \"FORMULA\"\tAxiomatisation over IPL\n\
+  \\n  FORMULA:\n\
+  \    p | ~A | A&B | A|B | A=>B\n\
+  \\n  FILE:\n\
+  \    https://tptp.org/TPTP/SyntaxBNF.html"
+
+main :: IO ()
+main = catch run handler
