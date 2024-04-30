@@ -14,12 +14,12 @@ parse :: String -> Formula
 parse = P.parse "Main.hs"
 
 -- Variable-axiomatisation of Jankov Logic
-jn :: [Formula]
-jn = [parse "~p | ~~p"]
+kc :: [Formula]
+kc = [parse "~p | ~~p"]
 
 -- Variable-axiomatisation of Gödel-Dummett logic
-gd :: [Formula]
-gd = parse "(p => q) | ((p => q) => p)" : jn
+lc :: [Formula]
+lc = parse "(p => q) | ((p => q) => p)" : lc
 
 -- Checks validity based on the given logic
 run :: IO ()
@@ -29,8 +29,8 @@ run = do
   prove <- case logic of
     "cl"  -> return C.prove
     "il"  -> return I.prove
-    "jn"  -> return $ S.proveWith S.VAR jn
-    "gd"  -> return $ S.proveWith S.VAR gd
+    "kc"  -> return $ S.proveWith S.VAR kc
+    "lc"  -> return $ S.proveWith S.VAR lc
     axiom -> return $ S.prove [parse axiom]
   file <- readFile fileName
   let formula = P.parse fileName file
@@ -42,8 +42,8 @@ handler _ = putStrLn "Usage: super LOGIC FILE\n\
   \\n  LOGIC:\n\
   \    cl\t\tClassical Propositional Logic (CPL)\n\
   \    il\t\tIntuitionistic Propositional Logic (IPL)\n\
-  \    jn\t\tJankov Logic\n\
-  \    gd\t\tGödel-Dummett Logic\n\
+  \    kc\t\tJankov Logic\n\
+  \    lc\t\tGödel-Dummett Logic\n\
   \    \"FORMULA\"\tAxiomatisation over IPL\n\
   \\n  FORMULA:\n\
   \    p | ~A | A&B | A|B | A=>B\n\

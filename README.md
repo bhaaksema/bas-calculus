@@ -9,25 +9,31 @@ cabal install
 ```bash
 super LOGIC FILE
 
-# e.g.
+#  LOGIC:
+#    cl          Classical Propositional Logic (CPL)
+#    il          Intuitionistic Propositional Logic (IPL)
+#    kc          Jankov Logic
+#    lc          Gödel-Dummett Logic
+#    "FORMULA"   Axiomatisation over IPL
 
-# Classical Propositional Logic
-super cpl file.p
+#  FORMULA:
+#    p | ~A | A&B | A|B | A=>B
 
-# Intuitionistic Propositional Logic
-super ipl file.p
-
-# Jankov's Propositional Logic
-super jan file.p
-
-# Jankov's Propositional Logic (as extension over IPL)
-super "~p | ~~p" file.p
-
-# Gödel-Dummett Propositional Logic (as extension over IPL)
-super "(p => q) | (q => p)" file.p
+#  FILE:
+#    https://tptp.org/TPTP/SyntaxBNF.html
 ```
 
-Some input file examples can be found in `test/problems`, 
+### Examples
+```bash
+# Example (Jankov)
+super kc test/problems/LCL/LCL181+1.p
+
+# Example (Jankov as extension over IPL)
+super "~p | ~~p" test/problems/LCL/LCL181+1.p
+
+# Example (Gödel-Dummett)
+super lc test/problems/LCL/LCL230+1.p
+```
 
 ## Features
 - Based on a the rules of sequent calculi m-G4ip and intuitionistic tableau calculus.
