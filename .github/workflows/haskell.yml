@@ -5,8 +5,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: haskell-actions/setup@v2
+      - uses: actions/checkout@v4
+      - uses: haskell-actions/setup@v2.7.0
         with:
           enable-stack: true
       - name: Stack build
