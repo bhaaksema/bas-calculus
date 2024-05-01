@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveFunctor #-}
-module Data.Sequent where
+module Data.Sequent (module Data.Sequent, C.Category (..)) where
 
 import qualified Data.Collection as C
 import           Data.Formula

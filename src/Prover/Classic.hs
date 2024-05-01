@@ -1,7 +1,6 @@
 {-# LANGUAGE FlexibleInstances, LambdaCase #-}
 module Prover.Classic (prove) where
 
-import Data.Collection (Category (..))
 import Data.Formula
 import Data.Sequent
 

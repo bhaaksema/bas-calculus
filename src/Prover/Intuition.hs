@@ -1,7 +1,6 @@
 {-# LANGUAGE FlexibleInstances, LambdaCase #-}
 module Prover.Intuition (prove) where
 
-import           Data.Collection (Category (..))
 import           Data.Formula
 import           Data.Sequent
 import qualified Prover.Classic  as Cl
@@ -36,7 +35,8 @@ instance Provable Sequent where
       Bot -> True
       Top -> prove s
       -- Category 1
-      Var q -> prove (subst True q Top s)
+      Var p -> prove (subst True p Top s)
+      Neg (Var p) -> prove (subst True p Bot s)
       a :& b -> prove (add L a $ add L b s)
       Neg (a :| b) -> prove (add L (Neg a) $ add L (Neg b) s)
       (a :& b) :> c -> prove (add L (a :> b :> c) s)
@@ -61,7 +61,7 @@ instance Provable Sequent where
       Top -> True
       Bot -> prove s
       -- Category 1
-      Var q -> prove (lock R f $ subst False q Bot s)
+      Var p -> prove (lock R f $ subst False p Bot s)
       a :| b -> prove (add R a $ add R b s)
       -- Category 2
       a :& b -> all prove [add R a s, add R b s]
