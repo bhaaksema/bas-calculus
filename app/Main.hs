@@ -13,14 +13,6 @@ import qualified Prover.Super     as S
 parse :: String -> Formula
 parse = P.parse "Main.hs"
 
--- Variable-axiomatisation of Jankov Logic
-kc :: [Formula]
-kc = [parse "~p | ~~p"]
-
--- Variable-axiomatisation of Gödel-Dummett logic
-lc :: [Formula]
-lc = parse "(p => q) | ((p => q) => p)" : lc
-
 -- Checks validity based on the given logic
 run :: IO ()
 run = do
@@ -29,8 +21,8 @@ run = do
   prove <- case logic of
     "cl"  -> return C.prove
     "il"  -> return I.prove
-    "kc"  -> return $ S.proveWith S.VAR kc
-    "lc"  -> return $ S.proveWith S.VAR lc
+    "kc"  -> return $ S.proveWith S.VAR [parse "~p | ~~p"]
+    "lc"  -> return $ S.proveWith S.FOR [parse "(p => q) | (q => p)"]
     axiom -> return $ S.prove [parse axiom]
   file <- readFile fileName
   let formula = P.parse fileName file
