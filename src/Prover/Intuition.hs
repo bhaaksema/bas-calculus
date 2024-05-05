@@ -34,6 +34,7 @@ instance Provable Sequent where
       -- Category 0
       Bot -> True
       Top -> prove s
+      a | member R a s -> True
       -- Category 1
       Var p -> prove (subst True p Top s)
       Neg (Var p) -> prove (subst True p Bot s)
@@ -60,6 +61,7 @@ instance Provable Sequent where
       -- Category 0
       Top -> True
       Bot -> prove s
+      a | member L a s -> True
       -- Category 1
       Var p -> prove (lock R f $ subst False p Bot s)
       a :| b -> prove (add R a $ add R b s)

@@ -22,6 +22,11 @@ toFormula s = simplify $ foldr (:&) Top (C.items $ left s)
 fresh :: Sequent -> (Formula, Sequent)
 fresh s | p <- succ (getFresh s) = (p, s { getFresh = p })
 
+-- | \(O(m)\). Check if a formula is a member of the sequent.
+member :: Sign -> Formula -> Sequent -> Bool
+member L f = C.member f . left
+member R f = C.member f . right
+
 -- | \(O(1)\). Retrieve the formula with smallest category.
 view :: Sequent -> Maybe (Sign, Formula, Sequent)
 view s = case (C.view $ left s, C.view $ right s) of
@@ -32,7 +37,7 @@ view s = case (C.view $ left s, C.view $ right s) of
   (_, Just (_, b, r)) -> Just (R, b, s { right = r })
   _ -> Nothing
 
--- | \(O(1)\). Add a formula to the sequent.
+-- | \(O(m)\). Add a formula to the sequent.
 add :: Sign -> Formula -> Sequent -> Sequent
 add L f s = s { left = C.add f (left s) }
 add R f s = s { right = C.add f (right s) }

@@ -36,6 +36,18 @@ add f c = let
   C6 -> c { c6 = f `ins` c6 c }
   CX -> c { cx = f `ins` cx c }
 
+-- | \(O(m)\). Check if a formula is a member of the collection.
+member :: Formula -> Collection -> Bool
+member f C { .. } = case sch f of
+  C0 -> f `elem` c0
+  C1 -> f `elem` c1
+  C2 -> f `elem` c2
+  C3 -> f `elem` c3
+  C4 -> f `elem` c4
+  C5 -> f `elem` c5
+  C6 -> f `elem` c6
+  CX -> f `elem` cx
+
 -- | \(O(1)\). Retrieve all formulas uncategorized.
 items :: Collection -> [Formula]
 items C { .. } = c0 ++ c1 ++ c2 ++ c3 ++ c4 ++ c5 ++ c6 ++ cx
