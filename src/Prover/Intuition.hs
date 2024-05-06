@@ -3,7 +3,7 @@ module Prover.Intuition (prove) where
 
 import           Data.Formula
 import           Data.Sequent
-import qualified Prover.Classic  as Cl
+import qualified Prover.Classic as Cl
 
 class Provable a where
   prove :: a -> Bool
@@ -46,6 +46,9 @@ instance Provable Sequent where
       -- Category 2
       a :| b -> all prove [add L a s, add L b s]
       -- Category 4
+      a :> b
+        | member L a s -> prove (add L b s)
+        | not (Cl.prove (toFormula r)) -> False
       Neg a :> b | prove (add L a $ delR s) -> prove (add L b s)
       (a :> b) :> c | (p, t) <- fresh s,
         prove (add L a $ add L (b :> p) $ add L (p :> c) $ setR p t)
@@ -56,7 +59,7 @@ instance Provable Sequent where
       -- Category 6
       Neg (a :& b) -> all (\c -> prove (add L (Neg c) $ delR s)) [a, b]
       -- Backtrack
-      _ -> Cl.prove (toFormula r) && prove (lock L f s)
+      _ -> prove (lock L f s)
     Just (R, f, s) -> case f of
       -- Category 0
       Top -> True

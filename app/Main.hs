@@ -18,11 +18,13 @@ run :: IO ()
 run = do
   [logic, fileName] <- getArgs
   putStrLn fileName
+  let kc = [parse "~p | ~~p"]
+  let lc = parse "(p => q) | ((p => q) => p)" : kc
   prove <- case logic of
     "cl"  -> return C.prove
     "il"  -> return I.prove
-    "kc"  -> return $ S.proveWith S.VAR [parse "~p | ~~p"]
-    "lc"  -> return $ S.proveWith S.FOR [parse "(p => q) | (q => p)"]
+    "kc"  -> return $ S.proveWith S.VAR kc
+    "lc"  -> return $ S.proveWith S.VAR lc
     axiom -> return $ S.prove [parse axiom]
   file <- readFile fileName
   let formula = P.parse fileName file
