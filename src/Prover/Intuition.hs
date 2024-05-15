@@ -13,7 +13,7 @@ instance Provable Formula where
   prove = prove . fromFormula (\case
     L -> \case
       Bot            -> C0; Top             -> C0
-      (Var _)        -> C1; (Neg (Var _))   -> C1; (Neg (_ :| _))  -> C1;
+      (Var _)        -> C1; (Neg (Var _))   -> C1; (Neg (_ :| _))  -> C1
       (_ :& _)       -> C1; ((_ :& _) :> _) -> C1; ((_ :| _) :> _) -> C1
       (_ :| _)       -> C2
       (Neg _ :> _)   -> C4; ((_ :> _) :> _) -> C4

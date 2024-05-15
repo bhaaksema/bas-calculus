@@ -25,26 +25,26 @@ instance Provable Sequent where
   prove r = case view r of
     Just (L, f, s) -> case f of
       -- Category 0
-      Bot    -> True
-      Top    -> prove s
+      Bot              -> True
+      Top              -> prove s
       a | member R a s -> True
       -- Category 1
-      Var p  -> prove (subst True p Top s)
-      Neg a  -> prove (add R a s)
-      a :& b -> prove (add L a $ add L b s)
+      Var p            -> prove (subst True p Top s)
+      Neg a            -> prove (add R a s)
+      a :& b           -> prove (add L a $ add L b s)
       -- Category 2
-      a :| b -> all prove [add L a s, add L b s]
-      a :> b -> all prove [add R a s, add L b s]
+      a :| b           -> all prove [add L a s, add L b s]
+      a :> b           -> all prove [add R a s, add L b s]
     Just (R, f, s) -> case f of
       -- Category 0
-      Top    -> True
-      Bot    -> prove s
+      Top              -> True
+      Bot              -> prove s
       a | member L a s -> True
       -- Category 1
-      Var p  -> prove (subst True p Bot s)
-      Neg a  -> prove (add L a s)
-      a :| b -> prove (add R a $ add R b s)
-      a :> b -> prove (add L a $ add R b s)
+      Var p            -> prove (subst True p Bot s)
+      Neg a            -> prove (add L a s)
+      a :| b           -> prove (add R a $ add R b s)
+      a :> b           -> prove (add L a $ add R b s)
       -- Category 2
-      a :& b -> all prove [add R a s, add R b s]
+      a :& b           -> all prove [add R a s, add R b s]
     Nothing -> False
