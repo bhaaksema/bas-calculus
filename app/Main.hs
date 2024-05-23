@@ -32,7 +32,7 @@ run = do
 
 -- Exception handler
 handler :: SomeException -> IO ()
-handler _ = putStrLn "Usage: super LOGIC FILE\n\
+handler _ = error "Usage: super LOGIC FILE\n\
   \\n  LOGIC:\n\
   \    cl\t\tClassical Propositional Logic (CPL)\n\
   \    il\t\tIntuitionistic Propositional Logic (IPL)\n\

@@ -9,6 +9,7 @@ import qualified Prover.Intuition as Int
 -- | Set of variables of a formula
 vars :: Formula -> S.Set Formula
 vars p@(Var _) = S.singleton p
+vars (Neg a)   = vars a
 vars (a :& b)  = vars a `S.union` vars b
 vars (a :| b)  = vars a `S.union` vars b
 vars (a :> b)  = vars a `S.union` vars b
@@ -16,6 +17,7 @@ vars _         = S.empty
 
 -- | Set of subformulas of a formula
 fors :: Formula -> S.Set Formula
+fors (Neg a)  = S.insert (Neg a) $ fors a
 fors (a :& b) = S.insert (a :& b) $ fors a `S.union` fors b
 fors (a :| b) = S.insert (a :| b) $ fors a `S.union` fors b
 fors (a :> b) = S.insert (a :> b) $ fors a `S.union` fors b
