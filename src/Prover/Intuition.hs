@@ -12,18 +12,17 @@ class Provable a where
 instance Provable Formula where
   prove = prove . fromFormula (\case
     L -> \case
-      Bot            -> C0; Top             -> C0
-      (Var _)        -> C1; (Neg (Var _))   -> C1; (Neg (_ :| _))  -> C1
-      (_ :& _)       -> C1; ((_ :& _) :> _) -> C1; ((_ :| _) :> _) -> C1
-      (_ :| _)       -> C2
-      (Neg _ :> _)   -> C4; ((_ :> _) :> _) -> C4
-      (Neg (Neg _))  -> C5; (Neg (_ :> _))  -> C5
-      (Neg (_ :& _)) -> C6
+      Bot           -> C0; Top             -> C0
+      (Var _)       -> C1; (Neg (Var _))   -> C1; (Neg (_ :| _))  -> C1
+      (_ :& _)      -> C1; ((_ :& _) :> _) -> C1; ((_ :| _) :> _) -> C1
+      (_ :| _)      -> C2; (Neg _ :> _)    -> C4; ((_ :> _) :> _) -> C4
+      (Neg (Neg _)) -> C5; (Neg (_ :> _))  -> C5; (Neg (_ :& _))  -> C6
       _ -> CX
     R -> \case
-      Top     -> C0; Bot      -> C0
-      (Var _) -> C1; (_ :| _) -> C1; (_ :& _) -> C2
-      (Neg _) -> C3; (_ :> _) -> C3
+      Top      -> C0; Bot      -> C0
+      (Var _)  -> C1; (_ :| _) -> C1
+      (_ :& _) -> C2
+      (Neg _)  -> C3; (_ :> _) -> C3
     )
 
 -- | Check sequent provability

@@ -1,5 +1,5 @@
 cabal-version:   2.2
-name:            super
+name:            superintuition
 version:         1.0.0
 synopsis:        Prover for Superintuitionistic Logics in Haskell
 homepage:        https://github.com/bhaaksema/super-prover
@@ -15,12 +15,6 @@ common shared-props
   default-language: Haskell2010
   ghc-options:      -Wall -O2 -optc-O3
   build-depends:    base ^>=4.18.1
-
-executable super
-  import:           shared-props
-  main-is:          Main.hs
-  hs-source-dirs:   app
-  build-depends:    super
 
 library
   import:           shared-props
@@ -39,13 +33,19 @@ library
     megaparsec ^>=9.5.0,
     parser-combinators ^>=1.3.0
 
+executable super
+  import:           shared-props
+  hs-source-dirs:   app
+  main-is:          Main.hs
+  build-depends:    superintuition
+
 test-suite super-test
   import:           shared-props
   type:             exitcode-stdio-1.0
   hs-source-dirs:   test
   main-is:          Spec.hs
   build-depends:
-    super,
+    superintuition,
     directory ^>=1.3.7,
     tasty ^>=1.4.3,
     tasty-hunit ^>=0.10.1
