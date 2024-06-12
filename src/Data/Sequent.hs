@@ -1,13 +1,10 @@
-{-# LANGUAGE DeriveFunctor #-}
 module Data.Sequent (module Data.Sequent, C.Category (..)) where
 
 import qualified Data.Collection as C
 import           Data.Formula
 
 data Sign = L | R deriving (Eq, Show)
-data Pair a = S { getFresh :: Formula, left, right :: a }
-  deriving (Show, Functor)
-type Sequent = Pair C.Collection
+data Sequent = S { getFresh :: Formula, left, right :: C.Collection }
 
 -- | \(O(1)\). Sequent with singleton succedent.
 fromFormula :: (Sign -> Formula -> C.Category) -> Formula -> Sequent
@@ -61,4 +58,5 @@ lock R f s = s { right = C.lock f (right s) }
 
 -- | \(O(n)\). Substitute sequent, may unlock formulas.
 subst :: Bool -> Int -> Formula -> Sequent -> Sequent
-subst t p f = fmap (C.map $ substitute1 t (p, f))
+subst t p f s = let subst' = C.map $ substitute1 t (p, f)
+  in s {left = subst' (left s), right = subst' (right s)}
