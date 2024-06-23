@@ -10,11 +10,11 @@ cabal install
 super LOGIC FILE
 
 #  LOGIC:
-#    cl          Classical Propositional Logic (CPL)
-#    il          Intuitionistic Propositional Logic (IPL)
-#    kc          Jankov Logic
-#    lc          Gödel-Dummett Logic
-#    "FORMULA"   Axiomatisation over IPL
+#    cl          Classical Logic
+#    il          Intuitionistic Logic
+#    kl          Jankov Logic
+#    gl          Gödel-Dummett Logic
+#    "FORMULA"   Axiomatisation over IL
 
 #  FORMULA:
 #    p | ~A | A&B | A|B | A=>B
@@ -26,13 +26,13 @@ super LOGIC FILE
 ### Examples
 ```bash
 # Example (Jankov)
-super kc test/problems/LCL/LCL181+1.p
+super kl test/problems/LCL/LCL181+1.p
 
 # Example (Jankov as extension over IPL)
 super "~p | ~~p" test/problems/LCL/LCL181+1.p
 
 # Example (Gödel-Dummett)
-super lc test/problems/LCL/LCL230+1.p
+super gl test/problems/LCL/LCL230+1.p
 ```
 
 ## Features

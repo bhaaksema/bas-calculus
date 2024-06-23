@@ -1,56 +1,56 @@
 {-# LANGUAGE RecordWildCards #-}
 module Data.Collection where
 
-import Data.Formula
+import Data.Formula (Formula)
 
 data Category = C0 | C1 | C2 | C3 | C4 | C5 | C6 | CX
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord)
 
 data Collection = C {
-  sch :: Formula -> Category,
+  schedule :: Formula -> Category,
+  -- This custom data structure avoids the overhead of Data.Map.
   c0, c1, c2, c3, c4, c5, c6, cx :: [Formula]
 }
 
-instance Show Collection where
-  show C { .. } = show [c0, c1, c2, c3, c4, c5, c6, cx]
-
 -- | \(O(1)\). Empty collection.
 empty :: (Formula -> Category) -> Collection
-empty sch = C sch [] [] [] [] [] [] [] []
+empty schedule = C schedule [] [] [] [] [] [] [] []
 
 -- | \(O(m)\). Add a formula according to the category.
-add :: Formula -> Collection -> Collection
-add f c = let
-  ins x [] = [x]
-  ins x (y : ys) = case compare x y of
-    LT -> x : y : ys
-    EQ -> x : ys
-    GT -> y : ins x ys
-  in case sch c f of
-  C0 -> c { c0 = f `ins` c0 c }
-  C1 -> c { c1 = f `ins` c1 c }
-  C2 -> c { c2 = f `ins` c2 c }
-  C3 -> c { c3 = f `ins` c3 c }
-  C4 -> c { c4 = f `ins` c4 c }
-  C5 -> c { c5 = f `ins` c5 c }
-  C6 -> c { c6 = f `ins` c6 c }
-  CX -> c { cx = f `ins` cx c }
+insert :: Formula -> Collection -> Collection
+insert formula C { .. } = let
+  insertSet [] = [formula]
+  insertSet (f : fs) = case compare formula f of
+    LT -> formula : f : fs
+    EQ -> formula : fs
+    GT -> f : insertSet fs
+  in case schedule formula of
+    C0 -> C { c0 = insertSet c0, .. }
+    C1 -> C { c1 = insertSet c1, .. }
+    C2 -> C { c2 = insertSet c2, .. }
+    C3 -> C { c3 = insertSet c3, .. }
+    C4 -> C { c4 = insertSet c4, .. }
+    C5 -> C { c5 = insertSet c5, .. }
+    C6 -> C { c6 = insertSet c6, .. }
+    CX -> C { cx = insertSet cx, .. }
 
 -- | \(O(m)\). Check if a formula is a member of the collection.
 member :: Formula -> Collection -> Bool
-member f C { .. } = case sch f of
-  C0 -> f `elem` c0
-  C1 -> f `elem` c1
-  C2 -> f `elem` c2
-  C3 -> f `elem` c3
-  C4 -> f `elem` c4
-  C5 -> f `elem` c5
-  C6 -> f `elem` c6
-  CX -> f `elem` cx
+member formula C { .. } = let
+  elemFormula = elem formula
+  in case schedule formula of
+    C0 -> elemFormula c0
+    C1 -> elemFormula c1
+    C2 -> elemFormula c2
+    C3 -> elemFormula c3
+    C4 -> elemFormula c4
+    C5 -> elemFormula c5
+    C6 -> elemFormula c6
+    CX -> elemFormula cx
 
 -- | \(O(1)\). Retrieve all formulas uncategorized.
-items :: Collection -> [Formula]
-items C { .. } = c0 ++ c1 ++ c2 ++ c3 ++ c4 ++ c5 ++ c6 ++ cx
+elems :: Collection -> [Formula]
+elems C { .. } = c0 ++ c1 ++ c2 ++ c3 ++ c4 ++ c5 ++ c6 ++ cx
 
 -- | \(O(1)\). Retrieve the formula with smallest category.
 view :: Collection -> Maybe (Category, Formula, Collection)
@@ -65,13 +65,16 @@ view _                     = Nothing
 
 -- | \(O(1)\). Add a formula into the lock category.
 lock :: Formula -> Collection -> Collection
-lock f c = c { cx = f : cx c }
+lock formula collection = collection { cx = formula : cx collection }
 
 -- | \(O(m)\). Unlock all locked formulas.
 unlock :: Collection -> Collection
-unlock c = foldr add (c { cx = [] }) (cx c)
+unlock collection = foldr insert (collection { cx = [] }) (cx collection)
 
--- | \(O(n)\). Apply a function to every formula in the collection.
-map :: (Formula -> Formula) -> Collection -> Collection
-map f C { .. } = foldr (\a -> let b = f a in if a == b then lock a else add b) c cx
-  where c = foldr (add . f) (empty sch) (c0 ++ c1 ++ c2 ++ c3 ++ c4 ++ c5 ++ c6)
+-- | \(O(n)\). Substitute collection, may unlock formulas.
+subst :: (Formula -> Formula) -> Collection -> Collection
+subst func C { .. } = let
+  unlocked = c0 ++ c1 ++ c2 ++ c3 ++ c4 ++ c5 ++ c6
+  collection = foldr (insert . func) (empty schedule) unlocked
+  substLocked a = let b = func a in if a == b then lock a else insert b
+  in foldr substLocked collection cx
