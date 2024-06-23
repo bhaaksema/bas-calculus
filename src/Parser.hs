@@ -1,4 +1,4 @@
-module Parser (parse) where
+module Parser (parseTPTP, parseAxiom) where
 
 import           Control.Monad.Combinators.Expr
 import           Control.Monad.State
@@ -99,10 +99,15 @@ pTPTP = do
   return (if null facts then goal else combine facts :> goal)
 
 -- | TPTP Syntax based parser: https://tptp.org/TPTP/SyntaxBNF.html
-parse :: String -> String -> Formula
-parse file input = let
-  parser = sc *> choice [pTPTP, pFOFFormula]
-  output = runParserT parser file input
+parseGeneric :: Parser a -> String -> String -> a
+parseGeneric parser file input = let
+  output = runParserT (sc *> parser) file input
   in case evalState output M.empty of
-    Left e  -> error (errorBundlePretty e)
-    Right f -> f
+    Left  err -> error (errorBundlePretty err)
+    Right out -> out
+
+parseTPTP :: String -> String -> Formula
+parseTPTP = parseGeneric pTPTP
+
+parseAxiom :: String -> [Formula]
+parseAxiom = parseGeneric (pFOFFormula `sepBy1` symbol ",") ""

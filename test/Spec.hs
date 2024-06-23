@@ -5,7 +5,7 @@ import System.Directory
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Parser           (parse)
+import Parser           (parseTPTP)
 import Prover.Intuition (prove)
 
 -- | Create a problem test case
@@ -13,7 +13,7 @@ testProblem :: FilePath -> IO TestTree
 testProblem problem = do
   text <- readFile problem
   let expect = not ("Non-Theorem" `isInfixOf` text)
-  let formula = parse problem text
+  let formula = parseTPTP problem text
   return (testCase problem $ prove formula @?= expect)
 
 -- | Create a domain test tree containing problems
