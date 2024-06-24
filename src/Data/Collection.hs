@@ -1,14 +1,14 @@
 {-# LANGUAGE RecordWildCards #-}
 module Data.Collection where
 
-import Data.Formula (Formula)
+import Data.Formula
 
 data Category = C0 | C1 | C2 | C3 | C4 | C5 | C6 | CX
   deriving (Eq, Ord)
 
 data Collection = C {
   schedule :: Formula -> Category,
-  -- This custom data structure avoids the overhead of Data.Map.
+  -- This data structure avoids overhead of Map/Set.
   c0, c1, c2, c3, c4, c5, c6, cx :: [Formula]
 }
 
@@ -72,9 +72,10 @@ unlock :: Collection -> Collection
 unlock collection = foldr insert (collection { cx = [] }) (cx collection)
 
 -- | \(O(n)\). Substitute collection, may unlock formulas.
-subst :: (Formula -> Formula) -> Collection -> Collection
-subst func C { .. } = let
+subst :: Int -> Formula -> Collection -> Collection
+subst variable formula C { .. } = let
+  substitution = substitute1 variable formula
   unlocked = c0 ++ c1 ++ c2 ++ c3 ++ c4 ++ c5 ++ c6
-  collection = foldr (insert . func) (empty schedule) unlocked
-  substLocked a = let b = func a in if a == b then lock a else insert b
+  collection = foldr (insert . substitution) (empty schedule) unlocked
+  substLocked a = let b = substitution a in if a == b then lock a else insert b
   in foldr substLocked collection cx

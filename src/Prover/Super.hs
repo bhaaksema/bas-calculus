@@ -27,11 +27,11 @@ fors a        = S.singleton a
 cons :: Formula -> S.Set Formula
 cons = S.map (foldr1 (:&)) . S.deleteMin . S.powerSet . fors
 
--- | Axiomatization types
-data Axiomatization = VAR | FOR | SET deriving (Eq, Ord, Show)
+-- | Axiomatisation types
+data Axiomatisation = VAR | FOR | SET deriving (Eq, Ord, Show)
 
--- | Convert Axiomatization to corresponding function
-toFunction :: Axiomatization -> (Formula -> S.Set Formula)
+-- | Convert Axiomatisation to corresponding function
+toFunction :: Axiomatisation -> (Formula -> S.Set Formula)
 toFunction VAR = vars
 toFunction FOR = fors
 toFunction SET = cons
@@ -40,30 +40,30 @@ toFunction SET = cons
 upwards :: (Formula -> Formula -> Formula) -> Formula -> Formula -> Bool
 upwards op a p = let
   q = succ a; r = succ q
-  subap b = substitute1 True (fromEnum p, b) a
-  in Int.prove (subap q :& subap r :> subap (op q r))
+  substitution b = substitute1 (fromEnum p) b a
+  in Int.prove (substitution q :& substitution r :> substitution (op q r))
 
--- Check the kind of axiomatization
-axiomatization :: Formula -> Axiomatization
-axiomatization a | allUp (:&) = if allUp (:|) && allUp (:>) then VAR else FOR
+-- Check the kind of axiomatisation
+axiomatisation :: Formula -> Axiomatisation
+axiomatisation a | allUp (:&) = if allUp (:|) && allUp (:>) then VAR else FOR
   where allUp op = all (upwards op a) (vars a)
-axiomatization _ = SET
+axiomatisation _ = SET
 
 -- | Generalized bounding function
-bfunc :: S.Set Formula -> [Formula] -> [Formula]
-bfunc set as =
+bounding :: S.Set Formula -> [Formula] -> [Formula]
+bounding set as =
   [ substitute m a | a <- as
   , m <- foldr
     (\p -> (M.insert (fromEnum p) <$> S.toList set <*>))
     [M.empty] (vars a)
   ]
 
--- | Prove with specified axiomatization type
-proveWith :: Axiomatization -> [Formula] -> Formula -> Bool
-proveWith axiom as f = let
-  set = toFunction axiom f
-  in Int.prove (foldr (:&) Top (bfunc set as) :> f)
+-- | Prove with specified axiomatisation type
+proveWith :: Axiomatisation -> [Formula] -> Formula -> Bool
+proveWith axiom as goal = let
+  set = toFunction axiom goal
+  in Int.prove (foldr (:&) Top (bounding set as) :> goal)
 
 -- | Prove a superintuitionistic theorem via intuitionistic logic embedding
 prove :: [Formula] -> Formula -> Bool
-prove axioms = proveWith (maximum $ map axiomatization axioms) axioms
+prove axioms = proveWith (maximum $ map axiomatisation axioms) axioms

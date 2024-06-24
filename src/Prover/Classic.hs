@@ -11,12 +11,12 @@ class Provable a where
 instance Provable Formula where
   prove = prove . fromFormula (\case
     L -> \case
-      Bot      -> C0; Top      -> C0
-      (Var _)  -> C1; (Neg _)  -> C1; (_ :& _) -> C1
+      Bot      -> C0; Top      -> C0; (Var _)  -> C1
+      (Neg _)  -> C1; (_ :& _) -> C1
       (_ :| _) -> C2; (_ :> _) -> C2
     R -> \case
-      Top      -> C0; Bot     -> C0;
-      (Var _)  -> C1; (Neg _) -> C1; (_ :| _)  -> C1; (_ :> _) -> C1
+      Top      -> C0; Bot      -> C0; (Var _)  -> C1
+      (Neg _)  -> C1; (_ :| _) -> C1; (_ :> _) -> C1
       (_ :& _) -> C2
     )
 
@@ -29,7 +29,7 @@ instance Provable Sequent where
       Top              -> prove s
       a | member R a s -> True
       -- Category 1
-      Var p            -> prove (subst True p Top s)
+      Var p            -> prove (subst p Top s)
       Neg a            -> prove (add R a s)
       a :& b           -> prove (add L a $ add L b s)
       -- Category 2
@@ -41,7 +41,7 @@ instance Provable Sequent where
       Bot              -> prove s
       a | member L a s -> True
       -- Category 1
-      Var p            -> prove (subst True p Bot s)
+      Var p            -> prove (subst p Bot s)
       Neg a            -> prove (add L a s)
       a :| b           -> prove (add R a $ add R b s)
       a :> b           -> prove (add L a $ add R b s)

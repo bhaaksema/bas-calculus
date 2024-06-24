@@ -20,9 +20,9 @@ instance Provable Formula where
       _ -> CX
     R -> \case
       Top      -> C0; Bot      -> C0
-      (Var _)  -> C1; (_ :| _) -> C1
-      (_ :& _) -> C2
+      (_ :| _) -> C1; (_ :& _) -> C2
       (Neg _)  -> C3; (_ :> _) -> C3
+      _ -> CX;
     )
 
 -- | Check sequent provability
@@ -35,8 +35,8 @@ instance Provable Sequent where
       Top -> prove s
       a | member R a s -> True
       -- Category 1
-      Var p -> prove (subst True p Top s)
-      Neg (Var p) -> prove (subst True p Bot s)
+      Var p -> prove (subst p Top s)
+      Neg (Var p) -> prove (subst p Bot s)
       a :& b -> prove (add L a $ add L b s)
       Neg (a :| b) -> prove (add L (Neg a) $ add L (Neg b) s)
       (a :& b) :> c -> prove (add L (a :> b :> c) s)
@@ -65,7 +65,6 @@ instance Provable Sequent where
       Bot -> prove s
       a | member L a s -> True
       -- Category 1
-      Var p -> prove (lock R f $ subst False p Bot s)
       a :| b -> prove (add R a $ add R b s)
       -- Category 2
       a :& b -> all prove [add R a s, add R b s]
