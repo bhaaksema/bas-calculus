@@ -2,8 +2,8 @@ cabal-version:   2.2
 name:            superintuition
 version:         1.0.0
 synopsis:        Prover for Superintuitionistic Logics in Haskell
-homepage:        https://github.com/bhaaksema/super-prover
-bug-reports:     https://github.com/bhaaksema/super-prover/issues
+homepage:        https://github.com/bhaaksema/superintuition
+bug-reports:     https://github.com/bhaaksema/superintuition/issues
 license:         GPL-3.0-or-later
 license-file:    LICENSE
 author:          bhaaksema

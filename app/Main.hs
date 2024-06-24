@@ -6,23 +6,25 @@ import System.Exit        (exitSuccess)
 
 import           Data.Formula
 import qualified Parser           as P
-import qualified Prover.Classic   as C
-import qualified Prover.Intuition as I
-import qualified Prover.Super     as S
+import qualified Prover.Classic   as Cl
+import qualified Prover.Intuition as Il
+import qualified Prover.Super     as Sl
 
 -- Local parser for the main module
 parse :: String -> Formula
 parse = P.parseTPTP ""
 
--- Gets the logic and file name from cli
+-- Reads the logic and file name from cli
 input :: IO (String, String)
-input = do
-  [logic, fileName] <- getArgs
-  return (logic, fileName)
+input = getArgs >>= \args -> return (head args, head $ tail args)
 
--- Input exception handler
-handler :: SomeException -> IO (String, String)
-handler _ = do
+-- Outputs the SZS success status
+output :: Bool -> IO ()
+output result = putStr (if result then "Theorem" else "CounterSatisfiable")
+
+-- User input exception handler
+inputHandler :: SomeException -> IO (String, String)
+inputHandler _ = do
   putStrLn "Usage: super LOGIC FILE\n\
   \\n  LOGIC:\n\
   \    -cl\t\tClassical Logic\n\
@@ -36,22 +38,30 @@ handler _ = do
   \    https://tptp.org/TPTP/SyntaxBNF.html"
   exitSuccess
 
--- Solving based on the given logic
+-- Miscellaneous exception handler
+errorHandler :: SomeException -> IO ()
+errorHandler _ = putStr "Error"
+
+-- | Solver with SZS based output:
+-- https://tptp.org/Seminars/TPTP/Documents/SZSOntology.txt
 main :: IO ()
 main = do
-  (logic, fileName) <- catch input handler
-  putStr ("Solving " ++ fileName ++ " using ")
+  (logic, fileName) <- catch input inputHandler
   let kl = [parse "~p | ~~p"]
   let gl = parse "(p => q) | ((p => q) => p)" : kl
+  putStr "Solving with "
   prove <- case logic of
-    "-cl" -> putStrLn "Classical Logic" >> return C.prove
-    "-il" -> putStrLn "Intuitionistic Logic" >> return I.prove
-    "-kl" -> putStrLn "Jankov Logic" >> return (S.proveWith S.VAR kl)
-    "-gl" -> putStrLn "Gödel-Dummett Logic" >> return (S.proveWith S.VAR gl)
+    "-cl" -> putStrLn "Classical Logic" >> return Cl.prove
+    "-il" -> putStrLn "Intuitionistic Logic" >> return Il.prove
+    "-kl" -> putStrLn "Jankov Logic" >> return (Sl.proveWith Sl.VAR kl)
+    "-gl" -> putStrLn "Gödel-Dummett Logic" >> return (Sl.proveWith Sl.VAR gl)
     axiom -> do
       putStrLn ("Intuitionistic Logic + " ++ axiom)
-      return (S.prove $ P.parseAxiom axiom)
+      if Sl.prove (P.parseAxiom axiom) (Var $ -1)
+        then putStrLn "SZS status ContradictoryAxioms" >> exitSuccess
+        else return (Sl.prove $ P.parseAxiom axiom)
   file <- readFile fileName
   let formula = P.parseTPTP fileName file
   putStr "SZS status "
-  putStrLn (if prove formula then "Theorem" else "CounterSatisfiable")
+  catch (output $ prove formula) errorHandler
+  putStrLn (" for " ++ fileName)

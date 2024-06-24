@@ -76,13 +76,13 @@ instance Enum Formula where
 
 -- | Show instance for Formula
 instance Show Formula where
-  showsPrec _ Bot = showChar '⊥'
-  showsPrec _ Top = showChar '⊤'
-  showsPrec _ (Var p) = showString (show p)
-  showsPrec _ (Neg a) = showChar '¬' . showsPrec 9 a
+  showsPrec _ Bot = showString "$false"
+  showsPrec _ Top = showString "$true"
+  showsPrec _ (Var p) = showChar 'p' . shows p
+  showsPrec _ (Neg a) = showChar '~' . showsPrec 9 a
   showsPrec p (a :& b) = showParen (p > 8) $
-    showsPrec 8 a . showString " ∧ " . showsPrec 8 b
+    showsPrec 8 a . showString " & " . showsPrec 8 b
   showsPrec p (a :| b) = showParen (p > 7) $
-    showsPrec 7 a . showString " ∨ " . showsPrec 7 b
+    showsPrec 7 a . showString " | " . showsPrec 7 b
   showsPrec p (a :> b) = showParen (p > 6) $
-    showsPrec 7 a . showString " → " . showsPrec 6 b
+    showsPrec 7 a . showString " => " . showsPrec 6 b
