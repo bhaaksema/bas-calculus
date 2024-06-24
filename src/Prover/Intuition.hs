@@ -44,14 +44,18 @@ instance Provable Sequent where
         prove (add L (a :> p) $ add L (b :> p) $ add L (p :> c) t)
       -- Category 2
       a :| b -> all prove [add L a s, add L b s]
-      -- Category 4
       a :> b
         | member L a s -> prove (add L b s)
         | not (Cl.prove (toFormula r)) -> False
-      Neg a :> b | prove (add L a $ delR s) -> prove (add L b s)
-      (a :> b) :> c | (p, t) <- fresh s,
-        prove (add L a $ add L (b :> p) $ add L (p :> c) $ setR p t)
-        -> prove (add L c s)
+      -- Category 4
+      Neg a :> b
+        | not (prove (add L b s)) -> False
+        | prove (add L a $ delR s) -> True
+      (a :> b) :> c
+        | not (prove (add L c s)) -> False
+        | (p, t) <- fresh s
+        , u <- add L a $ add L (b :> p) $ add L (p :> c) $ setR p t
+        , prove u -> True
       -- Category 5
       Neg (Neg a) -> prove (add L a $ delR s)
       Neg (a :> b) -> prove (add L a $ add L (Neg b) $ delR s)
