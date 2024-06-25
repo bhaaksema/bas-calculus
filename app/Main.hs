@@ -10,10 +10,6 @@ import qualified Prover.Classic   as Cl
 import qualified Prover.Intuition as Il
 import qualified Prover.Super     as Sl
 
--- Local parser for the main module
-parse :: String -> Formula
-parse = P.parseTPTP ""
-
 -- Reads the logic and file name from cli
 input :: IO (String, String)
 input = getArgs >>= \args -> return (head args, head $ tail args)
@@ -47,8 +43,8 @@ errorHandler _ = putStr "Error"
 main :: IO ()
 main = do
   (logic, fileName) <- catch input inputHandler
-  let kl = [parse "~p | ~~p"]
-  let gl = parse "(p => q) | ((p => q) => p)" : kl
+  let kl = P.parseAxiom "~p | ~~p"
+  let gl = P.parseAxiom "(p => q) | ((p => q) => p)" ++ kl
   putStr "Solving with "
   prove <- case logic of
     "-cl" -> putStrLn "Classical Logic" >> return Cl.prove
@@ -57,9 +53,10 @@ main = do
     "-gl" -> putStrLn "Gödel-Dummett Logic" >> return (Sl.proveWith Sl.VAR gl)
     axiom -> do
       putStrLn ("Intuitionistic Logic + " ++ axiom)
-      if Sl.prove (P.parseAxiom axiom) (Var $ -1)
+      let axioms = P.parseAxiom axiom
+      if Sl.prove axioms (Var $ -1)
         then putStrLn "SZS status ContradictoryAxioms" >> exitSuccess
-        else return (Sl.prove $ P.parseAxiom axiom)
+        else return (Sl.prove axioms)
   file <- readFile fileName
   let formula = P.parseTPTP fileName file
   putStr "SZS status "
