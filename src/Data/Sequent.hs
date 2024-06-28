@@ -6,16 +6,16 @@ import           Data.Formula
 
 data Sign = L | R deriving (Eq, Show)
 data Sequent = Seq {
-  getFresh    :: Formula,
+  getFresh    :: Int,
   left, right :: C.Collection
 }
 
 -- | \(O(1)\). Sequent with singleton succedent.
 fromFormula :: (Sign -> Formula -> C.Category) -> Formula -> Sequent
-fromFormula schedule formula = let
-  lhs = C.empty (schedule L)
-  rhs = C.empty (schedule R)
-  in add R formula (Seq (succ formula) lhs rhs)
+fromFormula schedule formula
+  | lhs <- C.empty (schedule L)
+  , rhs <- C.empty (schedule R)
+  = add R formula (Seq (fromEnum formula) lhs rhs)
 
 -- | \(O(n)\). Conversion to formula.
 toFormula :: Sequent -> Formula
@@ -24,8 +24,8 @@ toFormula Seq { .. } = foldr (:&) Top (C.elems left)
 
 -- | \(O(1)\). Generate a fresh variable.
 fresh :: Sequent -> (Formula, Sequent)
-fresh sequent = (variable, sequent { getFresh = variable })
-  where variable = succ (getFresh sequent)
+fresh sequent = (Var variable, sequent { getFresh = variable })
+  where variable = getFresh sequent + 1
 
 -- | \(O(m)\). Check if a formula is a member of the sequent.
 member :: Sign -> Formula -> Sequent -> Bool
@@ -74,6 +74,6 @@ lock sign formula Seq { .. } = case sign of
 
 -- | \(O(n)\). Substitute sequent, may unlock formulas.
 subst :: Int -> Formula -> Sequent -> Sequent
-subst variable formula Seq { .. } = let
-  substitution = C.subst variable formula
-  in Seq { left = substitution left, right = substitution right, .. }
+subst variable formula Seq { .. }
+  | substitution <- C.subst variable formula
+  = Seq { left = substitution left, right = substitution right, .. }

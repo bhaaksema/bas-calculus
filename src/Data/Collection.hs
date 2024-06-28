@@ -16,37 +16,29 @@ data Collection = C {
 empty :: (Formula -> Category) -> Collection
 empty schedule = C schedule [] [] [] [] [] [] [] []
 
--- | \(O(m)\). Add a formula according to the category.
+-- | \(O(1)\). Add a formula according to the category.
 insert :: Formula -> Collection -> Collection
-insert formula C { .. } = let
-  insertSet [] = [formula]
-  insertSet (f : fs) = case compare formula f of
-    LT -> formula : f : fs
-    EQ -> formula : fs
-    GT -> f : insertSet fs
-  in case schedule formula of
-    C0 -> C { c0 = insertSet c0, .. }
-    C1 -> C { c1 = insertSet c1, .. }
-    C2 -> C { c2 = insertSet c2, .. }
-    C3 -> C { c3 = insertSet c3, .. }
-    C4 -> C { c4 = insertSet c4, .. }
-    C5 -> C { c5 = insertSet c5, .. }
-    C6 -> C { c6 = insertSet c6, .. }
-    CX -> C { cx = insertSet cx, .. }
+insert formula C { .. } = case schedule formula of
+    C0 -> C { c0 = formula : c0, .. }
+    C1 -> C { c1 = formula : c1, .. }
+    C2 -> C { c2 = formula : c2, .. }
+    C3 -> C { c3 = formula : c3, .. }
+    C4 -> C { c4 = formula : c4, .. }
+    C5 -> C { c5 = formula : c5, .. }
+    C6 -> C { c6 = formula : c6, .. }
+    CX -> C { cx = formula : cx, .. }
 
 -- | \(O(m)\). Check if a formula is a member of the collection.
 member :: Formula -> Collection -> Bool
-member formula C { .. } = let
-  elemFormula = elem formula
-  in case schedule formula of
-    C0 -> elemFormula c0
-    C1 -> elemFormula c1
-    C2 -> elemFormula c2
-    C3 -> elemFormula c3
-    C4 -> elemFormula c4
-    C5 -> elemFormula c5
-    C6 -> elemFormula c6
-    CX -> elemFormula cx
+member formula C { .. } = case schedule formula of
+    C0 -> formula `elem` c0
+    C1 -> formula `elem` c1
+    C2 -> formula `elem` c2
+    C3 -> formula `elem` c3
+    C4 -> formula `elem` c4
+    C5 -> formula `elem` c5
+    C6 -> formula `elem` c6
+    CX -> formula `elem` cx
 
 -- | \(O(1)\). Retrieve all formulas uncategorized.
 elems :: Collection -> [Formula]

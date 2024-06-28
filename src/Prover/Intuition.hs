@@ -40,7 +40,8 @@ instance Provable Sequent where
       a :& b -> prove (add L a $ add L b s)
       Neg (a :| b) -> prove (add L (Neg a) $ add L (Neg b) s)
       (a :& b) :> c -> prove (add L (a :> b :> c) s)
-      (a :| b) :> c -> let (p, t) = fresh s in
+      (a :| b) :> c
+        | (p, t) <- fresh s ->
         prove (add L (a :> p) $ add L (b :> p) $ add L (p :> c) t)
       -- Category 2
       a :| b -> all prove [add L a s, add L b s]
@@ -54,8 +55,8 @@ instance Provable Sequent where
       (a :> b) :> c
         | not (prove (add L c s)) -> False
         | (p, t) <- fresh s
-        , u <- add L a $ add L (b :> p) $ add L (p :> c) $ setR p t
-        , prove u -> True
+        , prove (add L a $ add L (b :> p) $ add L (p :> c) $ setR p t)
+        -> True
       -- Category 5
       Neg (Neg a) -> prove (add L a $ delR s)
       Neg (a :> b) -> prove (add L a $ add L (Neg b) $ delR s)
