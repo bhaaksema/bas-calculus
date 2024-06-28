@@ -60,7 +60,7 @@ setR formula = add R formula . delR
 -- | \(O(n)\). Delete the right formulas, unlocking the left formulas.
 delR :: Sequent -> Sequent
 delR Seq { .. } = Seq { left = C.unlock left, right = rhs, .. }
- where rhs = C.empty (C.schedule right)
+  where rhs = C.empty (C.schedule right)
 
 -- | \(O(1)\). Check if the succedent is empty.
 nullR :: Sequent -> Bool
