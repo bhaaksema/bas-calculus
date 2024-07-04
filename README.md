@@ -12,8 +12,8 @@ super LOGIC FILE
 #  LOGIC:
 #    -cl        Classical Logic
 #    -il        Intuitionistic Logic
-#    -kl        Jankov Logic
-#    -gl        Gödel-Dummett Logic
+#    -jn        Jankov Logic
+#    -lc        Gödel-Dummett Logic
 #    "FORMULA"  Axiomatisation over IL
 
 #  FORMULA:
@@ -26,13 +26,13 @@ super LOGIC FILE
 ### Examples
 ```bash
 # Example (Jankov)
-super -kl test/problems/LCL/LCL181+1.p
+super -jn test/problems/LCL/LCL181+1.p
 
 # Example (Jankov as extension over IPL)
 super "~p | ~~p" test/problems/LCL/LCL181+1.p
 
 # Example (Gödel-Dummett)
-super -gl test/problems/LCL/LCL230+1.p
+super -lc test/problems/LCL/LCL230+1.p
 ```
 
 ## Features

@@ -25,8 +25,8 @@ inputHandler _ = do
   \\n  LOGIC:\n\
   \    -cl\t\tClassical Logic\n\
   \    -il\t\tIntuitionistic Logic\n\
-  \    -kl\t\tJankov Logic\n\
-  \    -gl\t\tGödel-Dummett Logic\n\
+  \    -jn\t\tJankov Logic\n\
+  \    -lc\t\tGödel-Dummett Logic\n\
   \    \"FORMULA\"\tAxiomatisation over IL\n\
   \\n  FORMULA:\n\
   \    p | ~A | A&B | A|B | A=>B\n\
@@ -43,14 +43,14 @@ errorHandler _ = putStr "Error"
 main :: IO ()
 main = do
   (logic, fileName) <- catch input inputHandler
-  let kl = P.parseAxiom "~p | ~~p"
-  let gl = P.parseAxiom "(p => q) | ((p => q) => p)" ++ kl
+  let jn = P.parseAxiom "~p | ~~p"
+  let lc = P.parseAxiom "(p => q) | ((p => q) => p)" ++ jn
   putStr "Solving with "
   prove <- case logic of
     "-cl" -> putStrLn "Classical Logic" >> return Cl.prove
     "-il" -> putStrLn "Intuitionistic Logic" >> return Il.prove
-    "-kl" -> putStrLn "Jankov Logic" >> return (Sl.proveWith Sl.VAR kl)
-    "-gl" -> putStrLn "Gödel-Dummett Logic" >> return (Sl.proveWith Sl.VAR gl)
+    "-jn" -> putStrLn "Jankov Logic" >> return (Sl.proveWith Sl.VAR jn)
+    "-lc" -> putStrLn "Gödel-Dummett Logic" >> return (Sl.proveWith Sl.VAR lc)
     axiom -> do
       putStrLn ("Intuitionistic Logic + " ++ axiom)
       let axioms = P.parseAxiom axiom

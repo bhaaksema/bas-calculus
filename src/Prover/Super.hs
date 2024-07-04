@@ -5,6 +5,7 @@ import qualified Data.Set    as S
 
 import           Data.Formula
 import qualified Prover.Intuition as Int
+import Debug.Trace
 
 -- | Set of variables of a formula
 vars :: Formula -> S.Set Formula
@@ -66,4 +67,6 @@ proveWith axiom as goal = let
 
 -- | Prove a superintuitionistic theorem via intuitionistic logic embedding
 prove :: [Formula] -> Formula -> Bool
-prove axioms = proveWith (maximum $ map axiomatisation axioms) axioms
+prove axioms =
+  trace (show $ map axiomatisation axioms)
+  proveWith (maximum $ map axiomatisation axioms) axioms
