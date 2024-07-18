@@ -25,22 +25,21 @@ super LOGIC FILE
 
 ### Examples
 ```bash
-# Example (Jankov)
+# Jankov
 super -jn test/problems/LCL/LCL181+1.p
 
-# Example (Jankov as extension over IPL)
+# Jankov as extension over IPL
 super "~p | ~~p" test/problems/LCL/LCL181+1.p
 
-# Example (Gödel-Dummett)
+# Gödel-Dummett
 super -lc test/problems/LCL/LCL230+1.p
 ```
 
 ## Features
-- Based on a the rules of sequent calculi m-G4ip and intuitionistic tableau calculus.
+- Based on a the rules of sequent calculi **LJT*** and intuitionistic tableau calculus.
 - Once a variable $p$ or $\neg p$ is added to the antecedent, the sequent is substituted with $[\top/p]$ or $[\bot/p]$ respectively.
-- Formulae are reduced with boolean simplification rules before proof attempt and during substitutions.
-- Inference rules with propositional variables are omitted in favour of simplification and substitution rules.
-- Formulae of the sequent are analyzed through naive focussing, some may be temporarily excluded to restrict backtracking.
+- Formulas are reduced with boolean simplification rules before proof attempt and during substitutions.
+- Formulas of the sequent are analyzed through naive focussing, some may be temporarily locked to restrict backtracking.
 
 ## References
 1. Dyckhoff (1992). Contraction-free sequent calculi for intuitionistic logic. [doi:10.2307/2275431](https://doi.org/10.2307/2275431)
