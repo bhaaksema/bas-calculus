@@ -12,7 +12,7 @@ import qualified Prover.Super     as Sl
 
 -- Reads the logic and file name from cli
 input :: IO (String, String)
-input = getArgs >>= \args -> return (head args, head $ tail args)
+input = getArgs >>= \args -> return (head args, args !! 1)
 
 -- Outputs the SZS success status
 output :: Bool -> IO ()
